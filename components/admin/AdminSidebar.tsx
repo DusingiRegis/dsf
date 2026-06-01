@@ -10,6 +10,7 @@ export default function AdminSidebar() {
     { href: '/admin', label: 'Dashboard' },
     { href: '/admin/properties', label: 'Properties' },
     { href: '/admin/inquiries', label: 'Inquiries' },
+    { href: '/admin/settings', label: 'Settings' },
   ];
 
   return (

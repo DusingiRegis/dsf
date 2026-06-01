@@ -12,7 +12,7 @@ EstateHub is a modern, full-stack real estate web application built with Next.js
 | UI Components | Custom Button component + Framer Motion |
 | Database | MySQL (via XAMPP) |
 | ORM | Prisma |
-| Authentication | NextAuth (partially implemented, dummy data currently) |
+| Authentication | Custom login API with bcrypt |
 | Form Handling | React Hook Form + Zod |
 | Charts | Chart.js + react-chartjs-2 |
 
@@ -36,10 +36,13 @@ EstateHub is a modern, full-stack real estate web application built with Next.js
 │   │   │   └── page.tsx
 │   │   ├── inquiries/page.tsx
 │   │   ├── login/page.tsx
+│   │   ├── settings/page.tsx
 │   │   └── layout.tsx            # Admin layout with sidebar
 │   ├── api/                      # API Routes
+│   │   ├── admin/register/route.ts
 │   │   ├── auth/[...nextauth]/route.ts
 │   │   ├── inquiries/route.ts
+│   │   ├── login/route.ts
 │   │   ├── properties/
 │   │   │   ├── [id]/route.ts
 │   │   │   └── route.ts
@@ -141,7 +144,7 @@ This will create an admin user with:
 ```bash
 npm run dev
 ```
-The app will be available at http://localhost:3000
+The app will be available at http://localhost:3000 (or next available port, e.g., 3001)
 
 ## Default Credentials
 | Role | Email | Password |
@@ -151,14 +154,18 @@ The app will be available at http://localhost:3000
 ## Current State
 - ✅ Database (estatehub) set up and connected
 - ✅ Prisma migrations applied
-- ✅ Admin user seeded
+- ✅ Admin user seeded with credentials (email: admin@estatehub.com, password: admin123)
 - ✅ Navbar and Footer on all public pages
-- ✅ Admin sidebar navigation
+- ✅ Admin sidebar navigation with Dashboard, Properties, Inquiries, Settings
 - ✅ Admin dashboard with stats, chart, recent inquiries/properties/visitors
 - ✅ Properties list with add/edit/delete functionality
 - ✅ Contact form
 - ✅ Property detail page with inquiry form
 - ✅ All API routes using real Prisma instead of dummy data
+- ✅ Admin login page with working credentials check
+- ✅ Login API route with bcrypt password comparison
+- ✅ Admin settings page to add new administrators and list existing ones
+- ✅ API route for admin registration and user listing
 
 ## Future Improvements
 1. Connect NextAuth fully

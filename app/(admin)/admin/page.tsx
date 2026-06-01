@@ -3,30 +3,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
 
 // Dummy data
 const DUMMY_STATS = {
@@ -60,72 +36,6 @@ const DUMMY_VISITORS = [
   { id: 'v5', ip: '10.1.1.7', location: 'Sydney, Australia', page: '/contact', time: '2 hours ago' },
   { id: 'v6', ip: '172.20.0.8', location: 'Berlin, Germany', page: '/properties/3', time: '3 hours ago' },
 ];
-
-// Chart data
-const chartData = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-  datasets: [
-    {
-      label: 'Monthly Visitors',
-      data: [85, 95, 110, 130, 145, 175],
-      borderColor: 'rgb(6, 182, 212)', // cyan-500
-      backgroundColor: 'rgba(6, 182, 212, 0.1)',
-      tension: 0.4,
-      fill: true,
-      pointRadius: 5,
-      pointHoverRadius: 7
-    },
-    {
-      label: 'Properties Added',
-      data: [1, 2, 1, 3, 2, 3],
-      borderColor: 'rgb(201, 168, 76)', // accent gold
-      backgroundColor: 'rgba(201, 168, 76, 0.1)',
-      tension: 0.4,
-      fill: true,
-      pointRadius: 5,
-      pointHoverRadius: 7
-    }
-  ]
-};
-
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: true,
-  plugins: {
-    legend: {
-      position: 'top' as const,
-      labels: {
-        color: '#fff'
-      }
-    },
-    title: {
-      display: true,
-      text: 'Monthly Overview',
-      color: '#fff',
-      font: {
-        size: 16
-      }
-    }
-  },
-  scales: {
-    x: {
-      ticks: {
-        color: '#9ca3af'
-      },
-      grid: {
-        color: 'rgba(107, 114, 128, 0.2)'
-      }
-    },
-    y: {
-      ticks: {
-        color: '#9ca3af'
-      },
-      grid: {
-        color: 'rgba(107, 114, 128, 0.2)'
-      }
-    }
-  }
-};
 
 export default function AdminDashboardPage() {
   const [showAllVisitors, setShowAllVisitors] = useState(false);
@@ -166,11 +76,6 @@ export default function AdminDashboardPage() {
           <p className="text-muted mb-1">Today&apos;s Visitors</p>
           <p className="text-3xl font-bold">{DUMMY_STATS.todayVisitors}</p>
         </div>
-      </div>
-
-      {/* Chart Section */}
-      <div className="bg-admin-card p-6 rounded-xl mb-12">
-        <Line data={chartData} options={chartOptions} />
       </div>
 
       {/* Quick Actions */}
