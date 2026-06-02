@@ -18,8 +18,14 @@ export default function AddPropertyPage() {
     bathrooms: null,
     description: '',
     status: 'available',
-    featured: false
+    featured: false,
+    images: '[]',
+    videos: '[]'
   });
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [newVideoUrl, setNewVideoUrl] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -29,6 +35,36 @@ export default function AddPropertyPage() {
              type === 'checkbox' ? (e.target as HTMLInputElement).checked :
              value
     }));
+  };
+
+  const addImage = () => {
+    if (newImageUrl.trim()) {
+      const updatedImages = [...imageUrls, newImageUrl.trim()];
+      setImageUrls(updatedImages);
+      setFormData(prev => ({ ...prev, images: JSON.stringify(updatedImages) }));
+      setNewImageUrl('');
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const updatedImages = imageUrls.filter((_, i) => i !== index);
+    setImageUrls(updatedImages);
+    setFormData(prev => ({ ...prev, images: JSON.stringify(updatedImages) }));
+  };
+
+  const addVideo = () => {
+    if (newVideoUrl.trim()) {
+      const updatedVideos = [...videoUrls, newVideoUrl.trim()];
+      setVideoUrls(updatedVideos);
+      setFormData(prev => ({ ...prev, videos: JSON.stringify(updatedVideos) }));
+      setNewVideoUrl('');
+    }
+  };
+
+  const removeVideo = (index: number) => {
+    const updatedVideos = videoUrls.filter((_, i) => i !== index);
+    setVideoUrls(updatedVideos);
+    setFormData(prev => ({ ...prev, videos: JSON.stringify(updatedVideos) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,6 +196,68 @@ export default function AddPropertyPage() {
               className="w-full border border-gray-700 rounded-lg px-4 py-2 bg-gray-900 text-white"
               required
             />
+          </div>
+
+          {/* Images */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Images (URLs)</label>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                placeholder="Enter image URL"
+                className="flex-1 border border-gray-700 rounded-lg px-4 py-2 bg-gray-900 text-white"
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
+              />
+              <Button type="button" onClick={addImage}>Add</Button>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              {imageUrls.map((url, idx) => (
+                <div key={idx} className="relative">
+                  <img src={url} alt={`Property ${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Videos */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Videos (URLs)</label>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={newVideoUrl}
+                onChange={(e) => setNewVideoUrl(e.target.value)}
+                placeholder="Enter video URL (e.g., YouTube, Vimeo, etc.)"
+                className="flex-1 border border-gray-700 rounded-lg px-4 py-2 bg-gray-900 text-white"
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addVideo())}
+              />
+              <Button type="button" onClick={addVideo}>Add</Button>
+            </div>
+            <div className="space-y-4">
+              {videoUrls.map((url, idx) => (
+                <div key={idx} className="relative bg-gray-800 p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-300 truncate flex-1 mr-4">{url}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeVideo(idx)}
+                      className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Status & Featured */}

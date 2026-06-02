@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 // Dummy properties data
@@ -14,7 +14,12 @@ const DUMMY_PROPERTIES = [
     size: 3500,
     bedrooms: 4,
     bathrooms: 3,
-    images: ['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20modern%20villa%20exterior&image_size=square_hd'],
+    images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20modern%20villa%20exterior&image_size=square_hd']),
+    videos: JSON.stringify(['https://www.youtube.com/watch?v=dQw4w9WgXcQ']),
+    status: 'available',
+    featured: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: '2',
@@ -25,7 +30,12 @@ const DUMMY_PROPERTIES = [
     size: 2200,
     bedrooms: 3,
     bathrooms: 2,
-    images: ['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cozy%20suburban%20family%20home&image_size=square_hd'],
+    images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cozy%20suburban%20family%20home&image_size=square_hd']),
+    videos: JSON.stringify([]),
+    status: 'available',
+    featured: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: '3',
@@ -36,7 +46,12 @@ const DUMMY_PROPERTIES = [
     size: 5000,
     bedrooms: null,
     bathrooms: null,
-    images: ['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=waterfront%20land%20plot&image_size=square_hd'],
+    images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=waterfront%20land%20plot&image_size=square_hd']),
+    videos: JSON.stringify([]),
+    status: 'available',
+    featured: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: '4',
@@ -47,7 +62,12 @@ const DUMMY_PROPERTIES = [
     size: 2800,
     bedrooms: 3,
     bathrooms: 3,
-    images: ['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20downtown%20penthouse&image_size=square_hd'],
+    images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20downtown%20penthouse&image_size=square_hd']),
+    videos: JSON.stringify(['https://vimeo.com/148751763']),
+    status: 'sold',
+    featured: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: '5',
@@ -58,7 +78,12 @@ const DUMMY_PROPERTIES = [
     size: 8000,
     bedrooms: null,
     bathrooms: null,
-    images: ['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=mountain%20view%20land%20plot&image_size=square_hd'],
+    images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=mountain%20view%20land%20plot&image_size=square_hd']),
+    videos: JSON.stringify([]),
+    status: 'available',
+    featured: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: '6',
@@ -69,15 +94,37 @@ const DUMMY_PROPERTIES = [
     size: 3200,
     bedrooms: 4,
     bathrooms: 3,
-    images: ['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=beachfront%20modern%20house&image_size=square_hd'],
+    images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=beachfront%20modern%20house&image_size=square_hd']),
+    videos: JSON.stringify([]),
+    status: 'available',
+    featured: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
 ];
 
 export default function PropertiesPage() {
+  const [properties, setProperties] = useState<any[]>(DUMMY_PROPERTIES);
+  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  let filteredProperties = [...DUMMY_PROPERTIES];
+  // Fetch properties from API
+  useEffect(() => {
+    fetch('/api/properties')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProperties(data);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  let filteredProperties = [...properties];
 
   // Apply filters
   if (filterType !== 'all') {
@@ -89,6 +136,27 @@ export default function PropertiesPage() {
     filteredProperties.sort((a, b) => a.price - b.price);
   } else if (sortBy === 'price-high') {
     filteredProperties.sort((a, b) => b.price - a.price);
+  }
+
+  // Helper to parse images
+  const getImages = (images: any) => {
+    if (typeof images === 'string') {
+      try {
+        return JSON.parse(images);
+      } catch {
+        return [];
+      }
+    }
+    return images || [];
+  };
+
+  if (loading) {
+    return (
+      <main className="container mx-auto px-4 py-12">
+        <h1 className="font-serif text-4xl font-bold mb-8 text-center">Properties for Sale</h1>
+        <p className="text-center text-muted text-xl">Loading...</p>
+      </main>
+    );
   }
 
   return (
@@ -128,37 +196,42 @@ export default function PropertiesPage() {
       {/* Properties Grid */}
       {filteredProperties.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {filteredProperties.map((property) => (
-            <Link
-              key={property.id}
-              href={`/properties/${property.id}`}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
-            >
-              <div
-                className="h-56 bg-cover bg-center"
-                style={{ backgroundImage: `url(${property.images[0]})` }}
-              ></div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-serif text-xl font-semibold">{property.title}</h3>
-                  <span className="bg-accent text-primary px-3 py-1 rounded-full text-sm font-semibold capitalize">
-                    {property.type}
-                  </span>
+          {filteredProperties.map((property) => {
+            const images = getImages(property.images);
+            const firstImage = images[0] || 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=property%20placeholder&image_size=square_hd';
+            
+            return (
+              <Link
+                key={property.id}
+                href={`/properties/${property.id}`}
+                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+              >
+                <div
+                  className="h-56 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${firstImage})` }}
+                ></div>
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-serif text-xl font-semibold">{property.title}</h3>
+                    <span className="bg-accent text-primary px-3 py-1 rounded-full text-sm font-semibold capitalize">
+                      {property.type}
+                    </span>
+                  </div>
+                  <p className="text-primary text-2xl font-bold mb-2">
+                    ${property.price.toLocaleString()}
+                  </p>
+                  <p className="text-muted flex items-center gap-2 mb-3">
+                    <span>📍</span> {property.location}
+                  </p>
+                  <p className="text-sm text-muted">
+                    {property.size.toLocaleString()} sqft
+                    {property.bedrooms && ` • ${property.bedrooms} beds`}
+                    {property.bathrooms && ` • ${property.bathrooms} baths`}
+                  </p>
                 </div>
-                <p className="text-primary text-2xl font-bold mb-2">
-                  ${property.price.toLocaleString()}
-                </p>
-                <p className="text-muted flex items-center gap-2 mb-3">
-                  <span>📍</span> {property.location}
-                </p>
-                <p className="text-sm text-muted">
-                  {property.size.toLocaleString()} sqft
-                  {property.bedrooms && ` • ${property.bedrooms} beds`}
-                  {property.bathrooms && ` • ${property.bathrooms} baths`}
-                </p>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-20">

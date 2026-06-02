@@ -21,6 +21,7 @@ model Property {
   bathrooms   Int?       // null for plots
   description String     @db.Text
   images      String     @db.Text   // JSON stringified array of URLs
+  videos      String     @db.Text   // JSON stringified array of URLs
   status      String     @default("available") // "available" | "sold"
   featured    Boolean    @default(false)
   createdAt   DateTime   @default(now())
