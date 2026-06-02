@@ -47,7 +47,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-700 pt-8 text-center text-gray-400">
-          <p>&copy; 2025 EstateHub. All rights reserved. <Link href="/admin" className="text-gray-500 hover:text-gray-300 text-xs ml-2">Admin</Link></p>
+          <p>&copy; 2025 EstateHub. All rights reserved. </p>
         </div>
       </div>
     </footer>

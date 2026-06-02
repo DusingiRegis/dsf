@@ -104,7 +104,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
             </div>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" theme="admin" disabled={loading}>
               {loading ? 'Adding...' : 'Add Administrator'}
             </Button>
           </form>

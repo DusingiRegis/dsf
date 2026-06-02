@@ -122,6 +122,7 @@ export default function AdminDashboardPage() {
             <Button
               size="sm"
               variant="secondary"
+              theme="admin"
               onClick={() => setShowAllVisitors(!showAllVisitors)}
             >
               {showAllVisitors ? 'Show Less' : 'Show All'}

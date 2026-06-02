@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
               className="w-full border border-gray-700 rounded-lg px-4 py-2 bg-gray-900 text-white"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" theme="admin" disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}
           </Button>
         </form>

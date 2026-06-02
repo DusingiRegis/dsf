@@ -210,7 +210,7 @@ export default function AddPropertyPage() {
                 className="flex-1 border border-gray-700 rounded-lg px-4 py-2 bg-gray-900 text-white"
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
               />
-              <Button type="button" onClick={addImage}>Add</Button>
+              <Button type="button" theme="admin" onClick={addImage}>Add</Button>
             </div>
             <div className="grid grid-cols-3 gap-4">
               {imageUrls.map((url, idx) => (
