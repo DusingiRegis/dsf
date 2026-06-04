@@ -1,0 +1,336 @@
+'use client';
+
+import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import PropertyCard from '@/components/public/PropertyCard';
+
+interface Property {
+  id: string;
+  title: string;
+  type: 'house' | 'apartment' | 'plot' | 'commercial';
+  status: 'rent' | 'sale';
+  category: string;
+  price: number;
+  location: string;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  size?: number | null;
+  images: string[];
+  description: string;
+  features?: string[];
+  agent: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  addedDate: string;
+}
+
+export default function PropertyDetailPage() {
+  const { id } = useParams();
+  const [property, setProperty] = useState<Property | null>(null);
+  const [similarProperties, setSimilarProperties] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+
+  // Fetch property details
+  const fetchProperty = async () => {
+    if (!id) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/properties/${id}`);
+      const data = await response.json();
+      
+      // Parse images
+      let images = [
+        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=real%20estate%20property%20placeholder&image_size=landscape_16_9"
+      ];
+      if (data.images) {
+        try {
+          images = JSON.parse(data.images);
+          if (images.length === 0) {
+            images = [
+              "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=real%20estate%20property%20placeholder&image_size=landscape_16_9"
+            ];
+          }
+        } catch (e) {
+          images = [data.images];
+        }
+      }
+      
+      // Determine category
+      let category = 'Property';
+      if (data.type === 'house' && data.status === 'available') category = 'Houses for Sale';
+      if (data.type === 'apartment' && data.status === 'available') category = 'Sales Apartments';
+      if (data.type === 'plot' && data.status === 'available') category = 'Land/Plot Sales';
+      if (data.type === 'commercial' && data.status === 'available') category = 'Commercial Sales';
+      
+      const formattedProperty: Property = {
+        id: data.id,
+        title: data.title,
+        type: data.type as any,
+        status: 'sale' as const,
+        category,
+        price: data.price,
+        location: data.location,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        size: data.size,
+        images,
+        description: data.description || "No description available.",
+        features: [],
+        agent: {
+          name: "D.E.F Real Estate Team",
+          phone: "+250 788 123 456",
+          email: "info@defrealestate.com"
+        },
+        addedDate: data.createdAt ? new Date(data.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
+      };
+      
+      setProperty(formattedProperty);
+      
+      // Fetch similar properties
+      const similarResponse = await fetch('/api/properties');
+      const similarData = await similarResponse.json();
+      const similar = similarData
+        .filter((p: any) => p.id !== id)
+        .slice(0, 3)
+        .map((p: any) => {
+          let simImage = "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=real%20estate%20property%20placeholder&image_size=landscape_16_9";
+          if (p.images) {
+            try {
+              const simImages = JSON.parse(p.images);
+              if (simImages.length > 0) simImage = simImages[0];
+            } catch (e) {
+              simImage = p.images;
+            }
+          }
+          return {
+            id: p.id,
+            title: p.title,
+            type: p.type,
+            status: 'sale' as const,
+            category: 'Property',
+            price: p.price,
+            location: p.location,
+            bedrooms: p.bedrooms,
+            bathrooms: p.bathrooms,
+            size: p.size,
+            image: simImage,
+            agent: "D.E.F Real Estate Team",
+            addedDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
+          };
+        });
+      setSimilarProperties(similar);
+      
+    } catch (error) {
+      console.error('Error fetching property:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProperty();
+  }, [id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          propertyId: id,
+        }),
+      });
+      alert('Thank you! Your inquiry has been sent.');
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch (error) {
+      console.error('Error sending inquiry:', error);
+      alert('Failed to send inquiry. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="py-12 bg-[#F5F5F5]">
+        <div className="container mx-auto px-4">
+          <div className="animate-pulse">
+            <div className="h-96 bg-gray-200 rounded-xl mb-8" />
+            <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
+              <div className="h-8 w-3/4 bg-gray-200 rounded mb-4" />
+              <div className="h-4 w-1/2 bg-gray-200 rounded mb-4" />
+              <div className="flex gap-6">
+                <div className="h-4 w-24 bg-gray-200 rounded" />
+                <div className="h-4 w-24 bg-gray-200 rounded" />
+                <div className="h-4 w-24 bg-gray-200 rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!property) {
+    return (
+      <main className="py-12 bg-[#F5F5F5]">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-3xl font-bold text-[#0B1F3A] mb-4">Property Not Found</h1>
+          <p className="text-[#6B7280]">The property you're looking for doesn't exist.</p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="py-12 bg-[#F5F5F5]">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Column - Content */}
+          <div className="lg:w-2/3">
+            {/* Image Gallery */}
+            <div className="mb-8">
+              <div 
+                className="h-96 bg-cover bg-center rounded-xl mb-4" 
+                style={{ backgroundImage: `url(${property.images[selectedImage]})` }}
+              />
+              <div className="grid grid-cols-4 gap-2">
+                {property.images.map((img, idx) => (
+                  <div 
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`h-24 bg-cover bg-center rounded-lg cursor-pointer ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
+                    style={{ backgroundImage: `url(${img})` }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Title and Basic Info */}
+            <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
+              <div className="flex gap-2 mb-3">
+                <span className="badge-category">{property.category}</span>
+                <span className={property.status === 'rent' ? 'badge-rent' : 'badge-sale'}>
+                  {property.status === 'rent' ? 'For Rent' : 'For Sale'}
+                </span>
+              </div>
+              <h1 className="text-3xl font-bold text-[#0B1F3A] mb-2">{property.title}</h1>
+              <p className="text-[#6B7280] flex items-center gap-2 mb-4">📍 {property.location}</p>
+              <div className="flex gap-6 text-[#6B7280]">
+                {property.bedrooms && <span>🛏️ {property.bedrooms} Beds</span>}
+                {property.bathrooms && <span>🚿 {property.bathrooms} Baths</span>}
+                {property.size && <span>📐 {property.size} sqm</span>}
+              </div>
+            </div>
+            
+            {/* Description */}
+            <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
+              <h2 className="text-xl font-semibold text-[#0B1F3A] mb-4">Description</h2>
+              <p className="text-[#6B7280]">{property.description}</p>
+            </div>
+            
+            {/* Features */}
+            {property.features && property.features.length > 0 && (
+              <div className="bg-white p-6 rounded-xl shadow-sm">
+                <h2 className="text-xl font-semibold text-[#0B1F3A] mb-4">Features</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {property.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-[#6B7280]">
+                      <span className="text-[#C9A84C]">✓</span>
+                      {feature}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Right Column - Sidebar */}
+          <div className="lg:w-1/3">
+            {/* Price Box */}
+            <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
+              <p className="text-3xl font-bold text-[#0B1F3A] mb-4">${property.price.toLocaleString()}</p>
+              <div className="flex flex-col gap-3">
+                <button className="btn-primary w-full">📞 Contact Agent</button>
+                <button className="btn-secondary w-full">💬 WhatsApp</button>
+                <button className="border border-[#C9A84C] text-[#C9A84C] rounded-lg py-3 px-4 hover:bg-[#C9A84C] hover:text-white transition-colors">♡ Save Property</button>
+              </div>
+            </div>
+            
+            {/* Agent Info */}
+            <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
+              <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Agent Info</h3>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 bg-[#C9A84C] rounded-full flex items-center justify-center text-white font-bold text-xl">
+                  D
+                </div>
+                <div>
+                  <p className="font-semibold text-[#0B1F3A]">{property.agent.name}</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-[#6B7280]">
+                <p className="flex items-center gap-2">📞 {property.agent.phone}</p>
+                <p className="flex items-center gap-2">✉️ {property.agent.email}</p>
+              </div>
+            </div>
+            
+            {/* Inquiry Form */}
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+              <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Send Inquiry</h3>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <input 
+                  type="text" 
+                  placeholder="Your Name" 
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
+                />
+                <input 
+                  type="email" 
+                  placeholder="Your Email" 
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
+                />
+                <input 
+                  type="tel" 
+                  placeholder="Your Phone" 
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
+                />
+                <textarea 
+                  placeholder="Your Message" 
+                  rows={4}
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
+                />
+                <button type="submit" className="btn-primary w-full">Send Message</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        {/* Similar Properties */}
+        {similarProperties.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-[#0B1F3A] mb-6">Similar Properties</h2>
+            <div className="space-y-6">
+              {similarProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

@@ -1,0 +1,71 @@
+import Link from 'next/link';
+
+interface PropertyCardProps {
+  property: {
+    id: string;
+    title: string;
+    type: string;
+    status: 'rent' | 'sale';
+    category: string;
+    price: number;
+    location: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    size?: number;
+    image: string;
+    agent?: string;
+    featured?: boolean;
+    addedDate?: string;
+  };
+}
+
+export default function PropertyCard({ property }: PropertyCardProps) {
+  return (
+    <Link
+      href={`/properties/${property.id}`}
+      className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col md:flex-row"
+    >
+      <div
+        className="w-full md:w-80 h-56 md:h-auto bg-cover bg-center flex-shrink-0"
+        style={{ backgroundImage: `url(${property.image})` }}
+      />
+      <div className="p-6 flex flex-col flex-1">
+        <div className="flex gap-2 mb-3">
+          <span className="badge-category">{property.category}</span>
+          <span className={property.status === 'rent' ? 'badge-rent' : 'badge-sale'}>
+            {property.status === 'rent' ? 'For Rent' : 'For Sale'}
+          </span>
+        </div>
+        <h3 className="text-xl font-semibold text-[#0B1F3A] mb-2">{property.title}</h3>
+        <p className="text-[#6B7280] flex items-center gap-2 mb-2">
+          📍 {property.location}
+        </p>
+        {property.addedDate && (
+          <p className="text-[#6B7280] text-sm flex items-center gap-2 mb-2">
+            🗓️ {property.addedDate}
+          </p>
+        )}
+        <div className="flex gap-4 text-[#6B7280] mb-4">
+          {property.bedrooms && <span>🛏️ {property.bedrooms} Beds</span>}
+          {property.bathrooms && <span>🚿 {property.bathrooms} Baths</span>}
+          {property.size && <span>📐 {property.size} sqm</span>}
+        </div>
+        <div className="mt-auto flex justify-between items-center">
+          {property.agent && (
+            <span className="text-[#6B7280] flex items-center gap-2">
+              👤 {property.agent}
+            </span>
+          )}
+          <div className="flex items-center gap-4">
+            <span className="text-2xl font-bold text-[#0B1F3A]">
+              ${property.price.toLocaleString()}
+            </span>
+            <button className="bg-[#C9A84C] hover:bg-[#B8973D] text-white px-4 py-2 rounded-lg transition-colors">
+              View
+            </button>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
