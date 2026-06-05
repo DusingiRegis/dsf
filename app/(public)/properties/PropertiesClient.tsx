@@ -15,6 +15,7 @@ interface Property {
   status: string;
   category: string;
   price: number;
+  currency?: string;
   location: string;
   bedrooms?: number | null;
   bathrooms?: number | null;
@@ -119,6 +120,7 @@ export default function PropertiesClient() {
           listingType: prop.listingType,
           category,
           price: prop.price,
+          currency: prop.currency || 'USD',
           location: prop.location,
           bedrooms: prop.bedrooms ?? undefined,
           bathrooms: prop.bathrooms ?? undefined,

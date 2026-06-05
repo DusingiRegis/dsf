@@ -16,8 +16,9 @@ model Property {
   type        String     // "house" | "apartment" | "plot" | "commercial"
   listingType String     @default("sale") // "rent" | "sale"
   price       Float
+  currency    String     @default("USD") // "USD" | "FRW"
   location    String
-  size        Float      // in sqm or acres
+  size        Float      // in sqft or acres
   bedrooms    Int?       // null for plots
   bathrooms   Int?       // null for plots
   description String

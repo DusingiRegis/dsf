@@ -107,6 +107,7 @@ export default function HomePage() {
           status: prop.status,
           category: category,
           price: prop.price,
+          currency: prop.currency || 'USD',
           location: prop.location,
           bedrooms: prop.bedrooms,
           bathrooms: prop.bathrooms,

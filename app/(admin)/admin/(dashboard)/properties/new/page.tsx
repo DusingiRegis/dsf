@@ -13,6 +13,7 @@ export default function AddPropertyPage() {
     type: 'house',
     listingType: 'sale',
     price: 0,
+    currency: 'USD',
     location: '',
     size: 0,
     bedrooms: null as number | null,
@@ -170,11 +171,18 @@ export default function AddPropertyPage() {
             </select>
           </div>
 
-          {/* Price & Location */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Price, Currency & Location */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Price ($)</label>
+              <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Price</label>
               <input type="number" name="price" value={formData.price} onChange={handleChange} className={inputClass} min={0} required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Currency</label>
+              <select name="currency" value={formData.currency} onChange={handleChange} className={inputClass}>
+                <option value="USD">USD ($)</option>
+                <option value="FRW">FRW (RWF)</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Location</label>

@@ -9,6 +9,7 @@ interface PropertyCardProps {
     listingType?: string;
     category: string;
     price: number;
+    currency?: string;
     location: string;
     bedrooms?: number;
     bathrooms?: number;
@@ -71,7 +72,10 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           )}
           <div className="flex items-center gap-4">
             <span className="text-2xl font-bold text-[#0B1F3A]">
-              ${property.price.toLocaleString()}
+              {property.currency === 'FRW' 
+                ? `${property.price.toLocaleString()} FRW` 
+                : `$${property.price.toLocaleString()}`
+              }
               {property.listingType === 'rent' && <span className="text-lg font-normal">/month</span>}
             </span>
             <button className="bg-[#C9A84C] hover:bg-[#B8973D] text-white px-4 py-2 rounded-lg transition-colors">
