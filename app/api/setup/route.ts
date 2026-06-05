@@ -4,16 +4,21 @@ import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
+    console.log('Starting setup...');
+    
     // Check if admin already exists
+    console.log('Checking for existing admin...');
     const existingAdmin = await prisma.user.findUnique({
       where: { email: 'admin@defrealestate.com' },
     });
 
     if (existingAdmin) {
+      console.log('Admin already exists!');
       return NextResponse.json({ message: 'Admin already exists!' });
     }
 
     // Create initial admin
+    console.log('Creating new admin...');
     const hashedPassword = await bcrypt.hash('admin123', 10);
     const admin = await prisma.user.create({
       data: {
@@ -24,6 +29,7 @@ export async function GET() {
       },
     });
 
+    console.log('Admin created successfully!');
     return NextResponse.json({ 
       success: true, 
       message: 'Admin created successfully!',
@@ -34,6 +40,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Setup error:', error);
-    return NextResponse.json({ error: 'Failed to setup admin' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to setup admin', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
