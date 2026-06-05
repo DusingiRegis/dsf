@@ -8,7 +8,8 @@ interface Property {
   id: string;
   title: string;
   type: 'house' | 'apartment' | 'plot' | 'commercial';
-  status: 'rent' | 'sale';
+  status: 'available' | 'pending' | 'sold';
+  listingType: 'rent' | 'sale';
   category: string;
   price: number;
   location: string;
@@ -61,16 +62,24 @@ export default function PropertyDetailPage() {
       
       // Determine category
       let category = 'Property';
-      if (data.type === 'house' && data.status === 'available') category = 'Houses for Sale';
-      if (data.type === 'apartment' && data.status === 'available') category = 'Sales Apartments';
-      if (data.type === 'plot' && data.status === 'available') category = 'Land/Plot Sales';
-      if (data.type === 'commercial' && data.status === 'available') category = 'Commercial Sales';
+      const listingType = data.listingType || 'sale';
+      if (listingType === 'sale') {
+        if (data.type === 'house') category = 'Houses for Sale';
+        if (data.type === 'apartment') category = 'Sales Apartments';
+        if (data.type === 'plot') category = 'Land/Plot Sales';
+        if (data.type === 'commercial') category = 'Commercial Sales';
+      } else {
+        if (data.type === 'house') category = 'Houses for Rent';
+        if (data.type === 'apartment') category = 'Apartments for Rent';
+        if (data.type === 'commercial') category = 'Commercial Rentals';
+      }
       
       const formattedProperty: Property = {
         id: data.id,
         title: data.title,
         type: data.type as any,
-        status: 'sale' as const,
+        status: data.status || 'available',
+        listingType: listingType as 'rent' | 'sale',
         category,
         price: data.price,
         location: data.location,
@@ -82,8 +91,8 @@ export default function PropertyDetailPage() {
         features: [],
         agent: {
           name: "D.E.F Real Estate Team",
-          phone: "+250 788 123 456",
-          email: "info@defrealestate.com"
+          phone: "+250 788 909 960",
+          email: "dusabeyezuemmanuel99@gmail.com"
         },
         addedDate: data.createdAt ? new Date(data.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
       };
@@ -106,12 +115,26 @@ export default function PropertyDetailPage() {
               simImage = p.images;
             }
           }
+          // Determine category for similar property
+          let simCategory = 'Property';
+          const simListingType = p.listingType || 'sale';
+          if (simListingType === 'sale') {
+            if (p.type === 'house') simCategory = 'Houses for Sale';
+            if (p.type === 'apartment') simCategory = 'Sales Apartments';
+            if (p.type === 'plot') simCategory = 'Land/Plot Sales';
+            if (p.type === 'commercial') simCategory = 'Commercial Sales';
+          } else {
+            if (p.type === 'house') simCategory = 'Houses for Rent';
+            if (p.type === 'apartment') simCategory = 'Apartments for Rent';
+            if (p.type === 'commercial') simCategory = 'Commercial Rentals';
+          }
           return {
             id: p.id,
             title: p.title,
             type: p.type,
-            status: 'sale' as const,
-            category: 'Property',
+            status: p.status || 'available',
+            listingType: simListingType,
+            category: simCategory,
             price: p.price,
             location: p.location,
             bedrooms: p.bedrooms,
@@ -214,8 +237,8 @@ export default function PropertyDetailPage() {
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <div className="flex gap-2 mb-3">
                 <span className="badge-category">{property.category}</span>
-                <span className={property.status === 'rent' ? 'badge-rent' : 'badge-sale'}>
-                  {property.status === 'rent' ? 'For Rent' : 'For Sale'}
+                <span className={property.listingType === 'rent' ? 'badge-rent' : 'badge-sale'}>
+                  {property.listingType === 'rent' ? 'For Rent' : 'For Sale'}
                 </span>
               </div>
               <h1 className="text-3xl font-bold text-[#0B1F3A] mb-2">{property.title}</h1>
@@ -253,10 +276,20 @@ export default function PropertyDetailPage() {
           <div className="lg:w-1/3">
             {/* Price Box */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
-              <p className="text-3xl font-bold text-[#0B1F3A] mb-4">${property.price.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-[#0B1F3A] mb-4">
+                ${property.price.toLocaleString()}
+                {property.listingType === 'rent' && <span className="text-xl font-normal">/month</span>}
+              </p>
               <div className="flex flex-col gap-3">
-                <button className="btn-primary w-full">📞 Contact Agent</button>
-                <button className="btn-secondary w-full">💬 WhatsApp</button>
+                <a href={`tel:${property.agent.phone}`} className="btn-primary w-full text-center">📞 Contact Agent</a>
+                <a 
+                  href={`https://wa.me/250788909960?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="btn-secondary w-full text-center"
+                >
+                  💬 WhatsApp
+                </a>
                 <button className="border border-[#C9A84C] text-[#C9A84C] rounded-lg py-3 px-4 hover:bg-[#C9A84C] hover:text-white transition-colors">♡ Save Property</button>
               </div>
             </div>

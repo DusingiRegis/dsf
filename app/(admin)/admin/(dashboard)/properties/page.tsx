@@ -6,6 +6,8 @@ import Link from 'next/link';
 interface Property {
   id: string;
   title: string;
+  type: string;
+  listingType: string;
   status: string;
   price: number;
   createdAt: string;
@@ -75,6 +77,8 @@ export default function AdminProperties() {
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0B1F3A]">Property</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#0B1F3A]">Type</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#0B1F3A]">Listing</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0B1F3A]">Status</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0B1F3A]">Price</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0B1F3A]">Date</th>
@@ -84,16 +88,26 @@ export default function AdminProperties() {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">Loading properties...</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">Loading properties...</td>
                 </tr>
               ) : properties.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No properties found. Add one!</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">No properties found. Add one!</td>
                 </tr>
               ) : (
                 properties.map((property) => (
                   <tr key={property.id}>
                     <td className="px-6 py-4 text-[#0B1F3A]">{property.title}</td>
+                    <td className="px-6 py-4 text-slate-600 capitalize">{property.type}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        property.listingType === 'rent'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {property.listingType === 'rent' ? 'For Rent' : 'For Sale'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
                       <select
                         value={property.status}
@@ -113,6 +127,7 @@ export default function AdminProperties() {
                     </td>
                     <td className="px-6 py-4 font-medium text-[#0B1F3A]">
                       ${property.price.toLocaleString()}
+                      {property.listingType === 'rent' && <span className="text-xs text-slate-500 ml-1">/mo</span>}
                     </td>
                     <td className="px-6 py-4 text-slate-500">
                       {new Date(property.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
@@ -150,24 +165,37 @@ export default function AdminProperties() {
                         {new Date(property.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </p>
                     </div>
-                    <select
-                      value={property.status}
-                      onChange={(e) => handleStatusChange(property.id, e.target.value as 'available' | 'sold' | 'pending')}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border-none cursor-pointer ${
-                        property.status === 'available'
-                          ? 'bg-green-100 text-green-800'
-                          : property.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      <option value="available" className="bg-white text-gray-900">Available</option>
-                      <option value="pending" className="bg-white text-gray-900">In Talks</option>
-                      <option value="sold" className="bg-white text-gray-900">Sold Out</option>
-                    </select>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        property.listingType === 'rent'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {property.listingType === 'rent' ? 'For Rent' : 'For Sale'}
+                      </span>
+                      <select
+                        value={property.status}
+                        onChange={(e) => handleStatusChange(property.id, e.target.value as 'available' | 'sold' | 'pending')}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border-none cursor-pointer ${
+                          property.status === 'available'
+                            ? 'bg-green-100 text-green-800'
+                            : property.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        <option value="available" className="bg-white text-gray-900">Available</option>
+                        <option value="pending" className="bg-white text-gray-900">In Talks</option>
+                        <option value="sold" className="bg-white text-gray-900">Sold Out</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 flex-wrap">
+                    <span className="text-sm text-slate-600 capitalize bg-slate-100 px-3 py-1 rounded-full">{property.type}</span>
                   </div>
                   <p className="text-lg font-bold text-[#0B1F3A]">
                     ${property.price.toLocaleString()}
+                    {property.listingType === 'rent' && <span className="text-sm text-slate-500 ml-1">/month</span>}
                   </p>
                   <div className="flex gap-2 pt-2">
                     <button className="text-slate-500 hover:text-[#C9A84C] transition-colors py-2 px-4 border border-slate-200 rounded-lg">Edit</button>

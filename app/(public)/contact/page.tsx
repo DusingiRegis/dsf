@@ -98,7 +98,7 @@ export default function ContactPage() {
                   <div className="text-3xl text-[#C9A84C]">📞</div>
                   <div>
                     <h4 className="font-semibold text-[#0B1F3A]">Phone</h4>
-                    <p className="text-[#6B7280]">+250 788 123 456</p>
+                    <a href="tel:+250788909960" className="text-[#6B7280] hover:text-[#C9A84C]">+250 788 909 960</a>
                   </div>
                 </div>
                 
@@ -106,7 +106,7 @@ export default function ContactPage() {
                   <div className="text-3xl text-[#C9A84C]">✉️</div>
                   <div>
                     <h4 className="font-semibold text-[#0B1F3A]">Email</h4>
-                    <p className="text-[#6B7280]">info@defrealestate.com</p>
+                    <a href="mailto:dusabeyezuemmanuel99@gmail.com" className="text-[#6B7280] hover:text-[#C9A84C]">dusabeyezuemmanuel99@gmail.com</a>
                   </div>
                 </div>
               </div>

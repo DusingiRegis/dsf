@@ -6,10 +6,10 @@ export default function TopBar() {
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center gap-6 text-sm">
           <span className="flex items-center gap-2">
-            <span>📞</span> +250 788 123 456
+            <span>📞</span> +250 788 909 960
           </span>
           <span className="flex items-center gap-2">
-            <span>✉️</span> info@defrealestate.com
+            <span>✉️</span> dusabeyezuemmanuel99@gmail.com
           </span>
         </div>
         <div className="flex items-center gap-4">

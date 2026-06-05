@@ -11,6 +11,7 @@ export default function AddPropertyPage() {
   const [formData, setFormData] = useState({
     title: '',
     type: 'house',
+    listingType: 'sale',
     price: 0,
     location: '',
     size: 0,
@@ -149,12 +150,23 @@ export default function AddPropertyPage() {
             <input type="text" name="title" value={formData.title} onChange={handleChange} className={inputClass} required />
           </div>
 
+          {/* Listing Type */}
+          <div>
+            <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Listing Type</label>
+            <select name="listingType" value={formData.listingType} onChange={handleChange} className={inputClass}>
+              <option value="sale">For Sale</option>
+              <option value="rent">For Rent</option>
+            </select>
+          </div>
+
           {/* Property Type */}
           <div>
             <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Property Type</label>
             <select name="type" value={formData.type} onChange={handleChange} className={inputClass}>
               <option value="house">House</option>
+              <option value="apartment">Apartment</option>
               <option value="plot">Plot</option>
+              <option value="commercial">Commercial</option>
             </select>
           </div>
 
@@ -329,6 +341,7 @@ export default function AddPropertyPage() {
               <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Status</label>
               <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
                 <option value="available">Available</option>
+                <option value="pending">In Talks</option>
                 <option value="sold">Sold</option>
               </select>
             </div>

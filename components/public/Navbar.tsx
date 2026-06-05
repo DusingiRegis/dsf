@@ -3,14 +3,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const navRef = useRef<HTMLDivElement>(null);
 
   // Check scroll for navbar styling
@@ -62,7 +61,29 @@ export default function Navbar() {
     setIsMenuOpen(false);
   }, [pathname]);
 
-  const navItems = [
+  const navItems: Array<
+    | {
+        name: string;
+        href: string;
+        isHome: true;
+        dropdownName?: never;
+        mobileDropdownName?: never;
+        links?: never;
+      }
+    | {
+        name: string;
+        href?: never;
+        isHome?: never;
+        dropdownName: string;
+        mobileDropdownName: string;
+        links: Array<{ name: string; href: string }>;
+      }
+  > = [
+    {
+      name: 'Home',
+      href: '/',
+      isHome: true,
+    },
     {
       name: 'About',
       dropdownName: 'about',
@@ -82,8 +103,6 @@ export default function Navbar() {
         { name: 'Furnished Rentals', href: '/properties?type=furnished&status=rent' },
         { name: 'Unfurnished Rentals', href: '/properties?type=unfurnished&status=rent' },
         { name: 'Rental Apartments', href: '/properties?type=apartment&status=rent' },
-        { name: 'Commercial Rentals', href: '/properties?type=commercial&status=rent' },
-        { name: 'Car Rentals', href: '/cars?status=rent' },
       ],
     },
     {
@@ -94,8 +113,6 @@ export default function Navbar() {
         { name: 'Houses for Sale', href: '/properties?type=house&status=sale' },
         { name: 'Plots / Land Sales', href: '/properties?type=plot&status=sale' },
         { name: 'Sales Apartments', href: '/properties?type=apartment&status=sale' },
-        { name: 'Commercial Sales', href: '/properties?type=commercial&status=sale' },
-        { name: 'Cars for Sale', href: '/cars?status=sale' },
       ],
     },
     {
@@ -114,22 +131,8 @@ export default function Navbar() {
       return pathname === href;
     }
     
-    const [basePath, queryString] = href.split('?');
-    if (!queryString) {
-      return pathname.startsWith(basePath);
-    }
-    
-    const linkParams = new URLSearchParams(queryString);
-    let isActive = pathname.startsWith(basePath);
-    
-    linkParams.forEach((value, key) => {
-      const currentValue = searchParams.get(key);
-      if (currentValue !== value) {
-        isActive = false;
-      }
-    });
-    
-    return isActive;
+    const [basePath] = href.split('?');
+    return pathname.startsWith(basePath ?? href);
   };
 
   return (
@@ -158,6 +161,25 @@ export default function Navbar() {
           {/* Desktop Menu */}
           <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => {
+              if ('isHome' in item) {
+                // Render Home link
+                const href = item.href as string;
+                const isActive = checkActiveLink(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? 'text-[#C9A84C] bg-[#C9A84C]/20'
+                        : 'text-white hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 active:bg-[#C9A84C]/20 active:scale-95'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              }
+              
               const allLinks = item.links;
               const isAnyLinkActive = allLinks.some((link) => checkActiveLink(link.href));
               return (
@@ -234,42 +256,64 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="lg:hidden mt-4 border-t border-gray-700 pt-4 transition-all duration-300 transform origin-top bg-[#0B1F3A]">
             <div className="flex flex-col gap-2">
-              {navItems.map((item) => (
-                <div key={item.mobileDropdownName}>
-                  <button
-                    onClick={() => toggleDropdown(item.mobileDropdownName)}
-                    className="w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex justify-between items-center cursor-pointer hover:bg-gray-800 active:bg-gray-700 active:scale-98"
-                  >
-                    <span className={(() => {
-                      const allLinks = item.links;
-                      return allLinks.some((link) => checkActiveLink(link.href)) ? 'text-[#C9A84C]' : 'text-white';
-                    })()}>
+              {navItems.map((item) => {
+                if ('isHome' in item) {
+                  // Render Home link
+                  const href = item.href as string;
+                  const isActive = checkActiveLink(href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                        isActive
+                          ? 'text-[#C9A84C] bg-[#C9A84C]/20'
+                          : 'text-white hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 active:bg-[#C9A84C]/20 active:scale-98'
+                      }`}
+                    >
                       {item.name}
-                    </span>
-                    <span className="transition-transform duration-200 text-white">
-                      {openDropdown === item.mobileDropdownName ? '▾' : '▸'}
-                    </span>
-                  </button>
-                  {openDropdown === item.mobileDropdownName && (
-                    <div className="pl-4 mt-1 flex flex-col gap-1 transition-all duration-200">
-                      {item.links.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
-                            checkActiveLink(link.href)
-                              ? 'text-[#C9A84C] bg-[#C9A84C]/20'
-                              : 'text-gray-300 hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 active:bg-[#C9A84C]/20 active:scale-98'
-                          }`}
-                        >
-                          {link.name}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                    </Link>
+                  );
+                }
+              
+                return (
+                  <div key={item.mobileDropdownName}>
+                    <button
+                      onClick={() => toggleDropdown(item.mobileDropdownName)}
+                      className="w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex justify-between items-center cursor-pointer hover:bg-gray-800 active:bg-gray-700 active:scale-98"
+                    >
+                      <span className={(() => {
+                        const allLinks = item.links;
+                        return allLinks.some((link) => checkActiveLink(link.href)) ? 'text-[#C9A84C]' : 'text-white';
+                      })()}>
+                        {item.name}
+                      </span>
+                      <span className="transition-transform duration-200 text-white">
+                        {openDropdown === item.mobileDropdownName ? '▾' : '▸'}
+                      </span>
+                    </button>
+                    {openDropdown === item.mobileDropdownName && (
+                      <div className="pl-4 mt-1 flex flex-col gap-1 transition-all duration-200">
+                        {item.links.map((link) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setIsMenuOpen(false)}
+                            className={`px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                              checkActiveLink(link.href)
+                                ? 'text-[#C9A84C] bg-[#C9A84C]/20'
+                                : 'text-gray-300 hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 active:bg-[#C9A84C]/20 active:scale-98'
+                            }`}
+                          >
+                            {link.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               <Link
                 href="/contact"

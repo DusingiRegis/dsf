@@ -31,7 +31,8 @@ interface Property {
 const PROPERTIES_PER_PAGE = 10;
 
 interface Filters {
-  status: 'all' | 'available' | 'sold' | 'pending';
+  listingType: 'all' | 'rent' | 'sale';
+  status: 'all' | 'rent' | 'sale' | 'available' | 'sold' | 'pending';
   type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished';
   location: string;
   minPrice: number | null;
@@ -49,6 +50,7 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
+    listingType: 'all',
     status: 'all',
     type: 'all',
     location: '',
@@ -74,6 +76,9 @@ export default function PropertiesPage() {
       if (filters.location) {
         params.set('location', filters.location);
       }
+      if (filters.listingType !== 'all') {
+        params.set('listingType', filters.listingType);
+      }
       
       const response = await fetch(`/api/properties?${params.toString()}`);
       const data = await response.json();
@@ -93,18 +98,25 @@ export default function PropertiesPage() {
           }
         }
 
-        // Determine category based on type and status
+        // Determine category based on type and listingType
         let category = 'Property';
-        if (prop.type === 'house' && prop.status === 'available') category = 'Houses for Sale';
-        if (prop.type === 'apartment' && prop.status === 'available') category = 'Sales Apartments';
-        if (prop.type === 'plot' && prop.status === 'available') category = 'Land/Plot Sales';
-        if (prop.type === 'commercial' && prop.status === 'available') category = 'Commercial Sales';
+        if (prop.listingType === 'sale') {
+          if (prop.type === 'house') category = 'Houses for Sale';
+          if (prop.type === 'apartment') category = 'Sales Apartments';
+          if (prop.type === 'plot') category = 'Land/Plot Sales';
+          if (prop.type === 'commercial') category = 'Commercial Sales';
+        } else if (prop.listingType === 'rent') {
+          if (prop.type === 'house') category = 'Houses for Rent';
+          if (prop.type === 'apartment') category = 'Apartments for Rent';
+          if (prop.type === 'commercial') category = 'Commercial Rentals';
+        }
         
         return {
           id: prop.id,
           title: prop.title,
           type: prop.type as any,
           status: prop.status,
+          listingType: prop.listingType,
           category,
           price: prop.price,
           location: prop.location,
@@ -132,8 +144,10 @@ export default function PropertiesPage() {
   useEffect(() => {
     const typeParam = searchParams.get('type');
     const statusParam = searchParams.get('status');
+    const listingTypeParam = searchParams.get('listingType');
     
     const newFilters: Filters = {
+      listingType: (listingTypeParam as 'rent' | 'sale') || 'all',
       status: (statusParam as 'available' | 'sold' | 'pending') || 'all',
       type: (typeParam as 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished') || 'all',
       location: searchParams.get('location') || '',
@@ -155,6 +169,7 @@ export default function PropertiesPage() {
 
   // Filter properties
   const filteredProperties = properties.filter(property => {
+    if (filters.listingType !== 'all' && (property as any).listingType !== filters.listingType) return false;
     if (filters.status !== 'all' && property.status !== filters.status) return false;
     
     if (filters.type !== 'all') {
@@ -190,30 +205,15 @@ export default function PropertiesPage() {
     currentPage * PROPERTIES_PER_PAGE
   );
 
-  const handleFilterChange = (newFilters: Partial<Filters>, resetOtherFilters: boolean = false) => {
-    let updatedFilters: Filters;
-    if (resetOtherFilters) {
-      // Reset all filters when switching tabs
-      updatedFilters = {
-        status: newFilters.status || 'all',
-        type: 'all',
-        location: '',
-        minPrice: null,
-        maxPrice: null,
-        bedrooms: null,
-        bathrooms: null,
-        features: [],
-        sort: 'newest',
-      };
-    } else {
-      updatedFilters = { ...filters, ...newFilters };
-    }
+  const handleFilterChange = (newFilters: Partial<Filters>) => {
+    const updatedFilters = { ...filters, ...newFilters };
     
     setFilters(updatedFilters);
     setCurrentPage(1);
     
     // Update URL params
     const params = new URLSearchParams();
+    if (updatedFilters.listingType !== 'all') params.set('listingType', updatedFilters.listingType);
     if (updatedFilters.status !== 'all') params.set('status', updatedFilters.status);
     if (updatedFilters.type !== 'all') params.set('type', updatedFilters.type);
     if (updatedFilters.location) params.set('location', updatedFilters.location);
@@ -235,17 +235,18 @@ export default function PropertiesPage() {
   };
 
   const getPageTitle = () => {
-    if (filters.type === "furnished" && filters.status === "available") return "Furnished Available";
-    if (filters.type === "unfurnished" && filters.status === "available") return "Unfurnished Available";
-    if (filters.type === "apartment" && filters.status === "available") return "Available Apartments";
-    if (filters.type === "commercial" && filters.status === "available") return "Commercial Available";
-    if (filters.type === "house" && filters.status === "available") return "Houses for Sale";
-    if (filters.type === "plot" && filters.status === "available") return "Plots / Land Sales";
-    if (filters.type === "apartment" && filters.status === "available") return "Sales Apartments";
-    if (filters.type === "commercial" && filters.status === "available") return "Commercial Sales";
+    const typeText = filters.listingType === 'rent' ? 'Rent' : 'Sale';
+    if (filters.type === "furnished" && filters.status === "available") return `Furnished Available for ${typeText}`;
+    if (filters.type === "unfurnished" && filters.status === "available") return `Unfurnished Available for ${typeText}`;
+    if (filters.type === "apartment" && filters.status === "available") return `Available Apartments for ${typeText}`;
+    if (filters.type === "commercial" && filters.status === "available") return `Commercial Available for ${typeText}`;
+    if (filters.type === "house" && filters.status === "available") return `Houses for ${typeText}`;
+    if (filters.type === "plot" && filters.status === "available") return `Plots / Land for ${typeText}`;
     if (filters.status === "sold") return "Sold Out Properties";
     if (filters.status === "pending") return "In Talks Properties";
-    if (filters.status === "available") return "Available Properties";
+    if (filters.status === "available") return `Available Properties for ${typeText}`;
+    if (filters.listingType === 'rent') return "All Rental Properties";
+    if (filters.listingType === 'sale') return "All Properties for Sale";
     return "All Properties";
   };
 
@@ -267,49 +268,6 @@ export default function PropertiesPage() {
         
         <h1 className="text-3xl md:text-4xl font-bold text-[#0B1F3A] mb-8">{getPageTitle()}</h1>
 
-        {/* Available/Sold/In Talks Tabs */}
-        <div className="flex gap-4 mb-8 flex-wrap">
-          <button
-            onClick={() => handleFilterChange({ status: 'all' }, true)}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              filters.status === 'all'
-                ? 'bg-[#C9A84C] text-white'
-                : 'bg-white text-[#0B1F3A] hover:bg-[#C9A84C]/5'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => handleFilterChange({ status: 'available' }, true)}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              filters.status === 'available'
-                ? 'bg-[#C9A84C] text-white'
-                : 'bg-white text-[#0B1F3A] hover:bg-[#C9A84C]/5'
-            }`}
-          >
-            Available
-          </button>
-          <button
-            onClick={() => handleFilterChange({ status: 'pending' }, true)}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              filters.status === 'pending'
-                ? 'bg-[#C9A84C] text-white'
-                : 'bg-white text-[#0B1F3A] hover:bg-[#C9A84C]/5'
-            }`}
-          >
-            In Talks
-          </button>
-          <button
-            onClick={() => handleFilterChange({ status: 'sold' }, true)}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              filters.status === 'sold'
-                ? 'bg-[#C9A84C] text-white'
-                : 'bg-white text-[#0B1F3A] hover:bg-[#C9A84C]/5'
-            }`}
-          >
-            Sold Out
-          </button>
-        </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
@@ -369,7 +327,7 @@ export default function PropertiesPage() {
                 </div>
               ) : currentProperties.length > 0 ? (
                 currentProperties.map(property => (
-                  <PropertyCard key={property.id} property={property} />
+                  <PropertyCard key={property.id} property={property as any} />
                 ))
               ) : (
                 <div className="bg-white rounded-xl shadow-sm p-12 text-center">

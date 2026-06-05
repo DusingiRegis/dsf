@@ -2,9 +2,15 @@ import { NextResponse } from 'next/server';
 
 // In-memory store for properties (since MySQL isn't running)
 let propertiesStore: any[] = [
-  { id: '1', title: 'Modern Luxury Villa', type: 'house', price: 850000, location: 'Beverly Hills, CA', size: 3500, bedrooms: 4, bathrooms: 3, description: 'Beautiful modern villa', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20modern%20villa%20exterior&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '2', title: 'Cozy Suburban Home', type: 'house', price: 450000, location: 'Austin, TX', size: 2200, bedrooms: 3, bathrooms: 2, description: 'Charming family home', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cozy%20suburban%20family%20home&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '3', title: 'Waterfront Plot', type: 'plot', price: 250000, location: 'Miami, FL', size: 5000, bedrooms: null, bathrooms: null, description: 'Premium lot', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=waterfront%20land%20plot&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  // Sale properties
+  { id: '1', title: 'Modern Luxury Villa', type: 'house', listingType: 'sale', price: 850000, location: 'Kigali, Rwanda', size: 3500, bedrooms: 4, bathrooms: 3, description: 'Beautiful modern villa', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20modern%20villa%20exterior&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '2', title: 'Cozy Suburban Home', type: 'house', listingType: 'sale', price: 450000, location: 'Kigali, Rwanda', size: 2200, bedrooms: 3, bathrooms: 2, description: 'Charming family home', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cozy%20suburban%20family%20home&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '3', title: 'Waterfront Plot', type: 'plot', listingType: 'sale', price: 250000, location: 'Kigali, Rwanda', size: 5000, bedrooms: null, bathrooms: null, description: 'Premium lot', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=waterfront%20land%20plot&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '4', title: 'Modern Apartment', type: 'apartment', listingType: 'sale', price: 150000, location: 'Kigali, Rwanda', size: 1200, bedrooms: 2, bathrooms: 1, description: 'Stylish apartment', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=modern%20apartment%20exterior&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  // Rental properties
+  { id: '5', title: 'Furnished Luxury Apartment', type: 'apartment', listingType: 'rent', price: 2500, location: 'Kigali, Rwanda', size: 1500, bedrooms: 3, bathrooms: 2, description: 'Fully furnished luxury apartment for rent', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=furnished%20luxury%20apartment%20interior&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '6', title: 'Unfurnished House', type: 'house', listingType: 'rent', price: 1800, location: 'Kigali, Rwanda', size: 2000, bedrooms: 4, bathrooms: 2, description: 'Spacious unfurnished house for rent', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=unfurnished%20house%20exterior&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '7', title: 'Commercial Space', type: 'commercial', listingType: 'rent', price: 3000, location: 'Kigali, Rwanda', size: 2500, bedrooms: null, bathrooms: 2, description: 'Prime commercial space for rent', images: JSON.stringify(['https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=commercial%20office%20space%20exterior&image_size=square_hd']), videos: JSON.stringify([]), status: 'available', featured: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
 // Share store with other routes using globalThis
@@ -21,6 +27,7 @@ export async function GET(req: Request) {
     const type = searchParams.get('type') || undefined;
     const status = searchParams.get('status') || undefined;
     const location = searchParams.get('location') || undefined;
+    const listingType = searchParams.get('listingType') || undefined;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = 10;
     const skip = (page - 1) * limit;
@@ -30,6 +37,7 @@ export async function GET(req: Request) {
     if (type) filtered = filtered.filter(p => p.type === type);
     if (status) filtered = filtered.filter(p => p.status === status);
     if (location) filtered = filtered.filter(p => p.location.toLowerCase().includes(location.toLowerCase()));
+    if (listingType) filtered = filtered.filter(p => p.listingType === listingType);
     
     // Sort and paginate
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

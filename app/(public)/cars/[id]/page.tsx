@@ -17,7 +17,7 @@ const dummyCar = {
   color: "White",
   engine: "3.5L V6",
   drive: "4WD",
-  status: "sale" as const,
+  status: "sale" as 'rent' | 'sale',
   images: [
     "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20white%20car%20front&image_size=landscape_16_9",
     "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20interior&image_size=landscape_16_9",
@@ -28,19 +28,19 @@ const dummyCar = {
   features: ["Leather Seats", "Sunroof", "Navigation System", "Bluetooth", "Backup Camera", "Heated Seats", "Apple CarPlay", "Android Auto", "Cruise Control", "Keyless Entry"],
   agent: {
     name: "D.E.F Real Estate Team",
-    phone: "+250 788 123 456",
-    email: "info@defrealestate.com",
+    phone: "+250 788 909 960",
+    email: "dusabeyezuemmanuel99@gmail.com",
   },
   addedDate: "June 1, 2026",
 };
 
 const similarCars = [
-  { id: "2", title: "2022 Mercedes-Benz C-Class", brand: "Mercedes", model: "C-Class", year: 2022, price: 65000, mileage: 25000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=mercedes%20benz%20c%20class%20black%20car&image_size=landscape_16_9" },
-  { id: "3", title: "2021 BMW X5", brand: "BMW", model: "X5", year: 2021, price: 58000, mileage: 35000, fuelType: "Diesel", transmission: "Automatic", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=bmw%20x5%20suv%20car&image_size=landscape_16_9" },
+  { id: "2", title: "2022 Mercedes-Benz C-Class", brand: "Mercedes", model: "C-Class", year: 2022, price: 65000, mileage: 25000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as 'rent' | 'sale', image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=mercedes%20benz%20c%20class%20black%20car&image_size=landscape_16_9" },
+  { id: "3", title: "2021 BMW X5", brand: "BMW", model: "X5", year: 2021, price: 58000, mileage: 35000, fuelType: "Diesel", transmission: "Automatic", status: "sale" as 'rent' | 'sale', image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=bmw%20x5%20suv%20car&image_size=landscape_16_9" },
 ];
 
 export default function CarDetailPage() {
-  const { id } = useParams();
+  useParams(); // We're not using id right now since it's static data
   const [selectedImage, setSelectedImage] = useState(0);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
 
@@ -120,8 +120,15 @@ export default function CarDetailPage() {
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <p className="text-3xl font-bold text-[#0B1F3A] mb-4">${dummyCar.price.toLocaleString()}</p>
               <div className="flex flex-col gap-3">
-                <button className="btn-primary w-full">📞 Contact Agent</button>
-                <button className="btn-secondary w-full">💬 WhatsApp</button>
+                <a href={`tel:${dummyCar.agent.phone}`} className="btn-primary w-full text-center">📞 Contact Agent</a>
+                <a 
+                  href={`https://wa.me/250788909960?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(dummyCar.title)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="btn-secondary w-full text-center"
+                >
+                  💬 WhatsApp
+                </a>
                 <button className="border border-[#C9A84C] text-[#C9A84C] rounded-lg py-3 px-4 hover:bg-[#C9A84C] hover:text-white transition-colors">♡ Save Car</button>
               </div>
             </div>

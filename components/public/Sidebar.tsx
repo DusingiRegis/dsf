@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 interface Filters {
-  status: 'all' | 'rent' | 'sale';
+  status: 'all' | 'rent' | 'sale' | 'available' | 'sold' | 'pending';
   type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished';
   location: string;
   minPrice: number | null;
@@ -12,14 +12,16 @@ interface Filters {
   bathrooms: number | null;
   features: string[];
   sort: 'newest' | 'price-low' | 'price-high';
+  [key: string]: any;
 }
 
 interface SidebarProps {
   filters: Filters;
   onFilterChange: (filters: Partial<Filters>) => void;
+  useFor?: 'properties' | 'cars';
 }
 
-export default function Sidebar({ filters, onFilterChange }: SidebarProps) {
+export default function Sidebar({ filters, onFilterChange, useFor = 'properties' }: SidebarProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [tempFilters, setTempFilters] = useState(filters);
 
@@ -29,7 +31,10 @@ export default function Sidebar({ filters, onFilterChange }: SidebarProps) {
   }, [filters]);
 
   const handleStatusChange = (value: string) => {
-    let status: 'all' | 'rent' | 'sale' = 'all';
+    let status: 'all' | 'available' | 'pending' | 'sold' | 'rent' | 'sale' = 'all';
+    if (value === 'Available') status = 'available';
+    if (value === 'In Talks') status = 'pending';
+    if (value === 'Sold Out') status = 'sold';
     if (value === 'For Rent') status = 'rent';
     if (value === 'For Sale') status = 'sale';
     setTempFilters({ ...tempFilters, status });
@@ -78,6 +83,12 @@ export default function Sidebar({ filters, onFilterChange }: SidebarProps) {
   };
 
   const getStatusValue = () => {
+    if (useFor === 'properties') {
+      if (tempFilters.status === 'available') return 'Available';
+      if (tempFilters.status === 'pending') return 'In Talks';
+      if (tempFilters.status === 'sold') return 'Sold Out';
+      return 'All';
+    }
     if (tempFilters.status === 'rent') return 'For Rent';
     if (tempFilters.status === 'sale') return 'For Sale';
     return 'All';
@@ -114,8 +125,18 @@ export default function Sidebar({ filters, onFilterChange }: SidebarProps) {
               onChange={(e) => handleStatusChange(e.target.value)}
             >
               <option>All</option>
-              <option>For Rent</option>
-              <option>For Sale</option>
+              {useFor === 'properties' ? (
+                <>
+                  <option>Available</option>
+                  <option>In Talks</option>
+                  <option>Sold Out</option>
+                </>
+              ) : (
+                <>
+                  <option>For Rent</option>
+                  <option>For Sale</option>
+                </>
+              )}
             </select>
           </div>
 

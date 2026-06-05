@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Sidebar from '@/components/public/Sidebar';
 
 const dummyCars = [
   { id: "1", title: "2023 Toyota Land Cruiser", brand: "Toyota", model: "Land Cruiser", year: 2023, price: 85000, mileage: 12000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20white%20car&image_size=landscape_16_9" },
@@ -18,10 +19,32 @@ const dummyCars = [
 
 const CARS_PER_PAGE = 10;
 
+type CarFilters = {
+  status: "all" | "rent" | "sale";
+  brand: "all" | string;
+  minYear: number | null;
+  maxYear: number | null;
+  fuelTypes: string[];
+  transmissions: string[];
+  minPrice: number | null;
+  maxPrice: number | null;
+  maxMileage: number | null;
+  sort: "newest" | "price-low" | "price-high" | "mileage-low";
+};
+
 export default function CarsPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [filters, setFilters] = useState({
-    status: "all" as "all" | "rent" | "sale"
+  const [filters, setFilters] = useState<CarFilters>({
+    status: "all",
+    brand: "all",
+    minYear: null,
+    maxYear: null,
+    fuelTypes: [],
+    transmissions: [],
+    minPrice: null,
+    maxPrice: null,
+    maxMileage: null,
+    sort: "newest"
   });
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -30,27 +53,258 @@ export default function CarsPage() {
   useEffect(() => {
     const statusParam = searchParams.get('status');
     setFilters({
-      status: (statusParam as "rent" | "sale") || "all"
+      status: (statusParam as "rent" | "sale") || "all",
+      brand: "all",
+      minYear: null,
+      maxYear: null,
+      fuelTypes: [],
+      transmissions: [],
+      minPrice: null,
+      maxPrice: null,
+      maxMileage: null,
+      sort: "newest"
     });
     setCurrentPage(1);
   }, [searchParams]);
   
   // Filter cars
   const filteredCars = dummyCars.filter(car => {
+    // Status filter
     if (filters.status !== "all" && car.status !== filters.status) return false;
+    
+    // Brand filter
+    if (filters.brand !== "all" && car.brand !== filters.brand) return false;
+    
+    // Year filter
+    if (filters.minYear !== null && car.year < filters.minYear) return false;
+    if (filters.maxYear !== null && car.year > filters.maxYear) return false;
+    
+    // Fuel type filter
+    if (filters.fuelTypes.length > 0 && !filters.fuelTypes.includes(car.fuelType)) return false;
+    
+    // Transmission filter
+    if (filters.transmissions.length > 0 && !filters.transmissions.includes(car.transmission)) return false;
+    
+    // Price filter
+    if (filters.minPrice !== null && car.price < filters.minPrice) return false;
+    if (filters.maxPrice !== null && car.price > filters.maxPrice) return false;
+    
+    // Mileage filter
+    if (filters.maxMileage !== null && car.mileage > filters.maxMileage) return false;
+    
     return true;
   });
   
-  const totalPages = Math.ceil(filteredCars.length / CARS_PER_PAGE);
-  const currentCars = filteredCars.slice(
+  // Sort cars
+  const sortedCars = [...filteredCars].sort((a, b) => {
+    switch (filters.sort) {
+      case "price-low":
+        return a.price - b.price;
+      case "price-high":
+        return b.price - a.price;
+      case "mileage-low":
+        return a.mileage - b.mileage;
+      case "newest":
+      default:
+        return b.year - a.year;
+    }
+  });
+  
+  const totalPages = Math.ceil(sortedCars.length / CARS_PER_PAGE);
+  const currentCars = sortedCars.slice(
     (currentPage - 1) * CARS_PER_PAGE,
     currentPage * CARS_PER_PAGE
   );
+  
+  const handleFilterChange = (newFilters: Partial<CarFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setCurrentPage(1);
+  };
+  
+  const handleSortChange = (sortValue: string) => {
+    let sort: CarFilters["sort"] = "newest";
+    if (sortValue === "Price: Low to High") sort = "price-low";
+    if (sortValue === "Price: High to Low") sort = "price-high";
+    if (sortValue === "Mileage: Low to High") sort = "mileage-low";
+    handleFilterChange({ sort });
+  };
   
   const getPageTitle = () => {
     if (filters.status === "rent") return "Car Rentals";
     if (filters.status === "sale") return "Cars for Sale";
     return "All Cars";
+  };
+
+  // Custom sidebar for cars (since it has different fields)
+  const CarSidebar = () => {
+    const [tempFilters, setTempFilters] = useState<CarFilters>(filters);
+    
+    useEffect(() => {
+      setTempFilters(filters);
+    }, [filters]);
+    
+    const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setTempFilters(prev => ({ ...prev, brand: e.target.value }));
+    };
+    
+    const handleMinYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTempFilters(prev => ({ ...prev, minYear: e.target.value ? Number(e.target.value) : null }));
+    };
+    
+    const handleMaxYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTempFilters(prev => ({ ...prev, maxYear: e.target.value ? Number(e.target.value) : null }));
+    };
+    
+    const handleFuelTypeToggle = (fuel: string) => {
+      setTempFilters(prev => ({
+        ...prev,
+        fuelTypes: prev.fuelTypes.includes(fuel) 
+          ? prev.fuelTypes.filter(f => f !== fuel) 
+          : [...prev.fuelTypes, fuel]
+      }));
+    };
+    
+    const handleTransmissionToggle = (trans: string) => {
+      setTempFilters(prev => ({
+        ...prev,
+        transmissions: prev.transmissions.includes(trans) 
+          ? prev.transmissions.filter(t => t !== trans) 
+          : [...prev.transmissions, trans]
+      }));
+    };
+    
+    const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTempFilters(prev => ({ ...prev, minPrice: e.target.value ? Number(e.target.value) : null }));
+    };
+    
+    const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTempFilters(prev => ({ ...prev, maxPrice: e.target.value ? Number(e.target.value) : null }));
+    };
+    
+    const handleMaxMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTempFilters(prev => ({ ...prev, maxMileage: e.target.value ? Number(e.target.value) : null }));
+    };
+    
+    const handleApply = () => {
+      handleFilterChange(tempFilters);
+    };
+    
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Filters</h3>
+        
+        <div className="mb-6">
+          <label className="block text-[#6B7280] mb-2 font-medium">Brand</label>
+          <select 
+            className="w-full p-3 border border-gray-300 rounded-lg"
+            value={tempFilters.brand}
+            onChange={handleBrandChange}
+          >
+            <option value="all">All Brands</option>
+            <option value="Toyota">Toyota</option>
+            <option value="Mercedes">Mercedes</option>
+            <option value="BMW">BMW</option>
+            <option value="Honda">Honda</option>
+            <option value="Ford">Ford</option>
+            <option value="Hyundai">Hyundai</option>
+          </select>
+        </div>
+        
+        <div className="mb-6">
+          <label className="block text-[#6B7280] mb-2 font-medium">Year</label>
+          <div className="flex gap-2">
+            <input 
+              type="number" 
+              placeholder="From" 
+              className="w-1/2 p-3 border border-gray-300 rounded-lg"
+              value={tempFilters.minYear || ''}
+              onChange={handleMinYearChange}
+            />
+            <input 
+              type="number" 
+              placeholder="To" 
+              className="w-1/2 p-3 border border-gray-300 rounded-lg"
+              value={tempFilters.maxYear || ''}
+              onChange={handleMaxYearChange}
+            />
+          </div>
+        </div>
+        
+        <div className="mb-6">
+          <label className="block text-[#6B7280] mb-2 font-medium">Fuel Type</label>
+          <div className="space-y-2">
+            {['Petrol', 'Diesel', 'Hybrid', 'Electric'].map((fuel) => (
+              <label key={fuel} className="flex items-center gap-2 cursor-pointer text-[#6B7280]">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4"
+                  checked={tempFilters.fuelTypes.includes(fuel)}
+                  onChange={() => handleFuelTypeToggle(fuel)}
+                />
+                {fuel}
+              </label>
+            ))}
+          </div>
+        </div>
+        
+        <div className="mb-6">
+          <label className="block text-[#6B7280] mb-2 font-medium">Transmission</label>
+          <div className="space-y-2">
+            {['Automatic', 'Manual', 'CVT'].map((trans) => (
+              <label key={trans} className="flex items-center gap-2 cursor-pointer text-[#6B7280]">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4"
+                  checked={tempFilters.transmissions.includes(trans)}
+                  onChange={() => handleTransmissionToggle(trans)}
+                />
+                {trans}
+              </label>
+            ))}
+          </div>
+        </div>
+        
+        <div className="mb-6">
+          <label className="block text-[#6B7280] mb-2 font-medium">Price Range</label>
+          <div className="flex gap-2">
+            <input 
+              type="number" 
+              placeholder="Min" 
+              className="w-1/2 p-3 border border-gray-300 rounded-lg"
+              value={tempFilters.minPrice || ''}
+              onChange={handleMinPriceChange}
+            />
+            <input 
+              type="number" 
+              placeholder="Max" 
+              className="w-1/2 p-3 border border-gray-300 rounded-lg"
+              value={tempFilters.maxPrice || ''}
+              onChange={handleMaxPriceChange}
+            />
+          </div>
+        </div>
+        
+        <div className="mb-6">
+          <label className="block text-[#6B7280] mb-2 font-medium">Max Mileage</label>
+          <div className="flex gap-2">
+            <input 
+              type="number" 
+              placeholder="Max km" 
+              className="w-full p-3 border border-gray-300 rounded-lg"
+              value={tempFilters.maxMileage || ''}
+              onChange={handleMaxMileageChange}
+            />
+          </div>
+        </div>
+        
+        <button 
+          onClick={handleApply}
+          className="w-full bg-[#C9A84C] hover:bg-[#B8973D] text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+        >
+          Apply Filters
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -119,79 +373,27 @@ export default function CarsPage() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <div className="lg:w-1/4">
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Filters</h3>
-              
-              <div className="mb-6">
-                <label className="block text-[#6B7280] mb-2 font-medium">Brand</label>
-                <select className="w-full p-3 border border-gray-300 rounded-lg">
-                  <option>All Brands</option>
-                  <option>Toyota</option>
-                  <option>Mercedes</option>
-                  <option>BMW</option>
-                  <option>Honda</option>
-                  <option>Ford</option>
-                  <option>Hyundai</option>
-                </select>
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-[#6B7280] mb-2 font-medium">Year</label>
-                <div className="flex gap-2">
-                  <input type="number" placeholder="From" className="w-1/2 p-3 border border-gray-300 rounded-lg" />
-                  <input type="number" placeholder="To" className="w-1/2 p-3 border border-gray-300 rounded-lg" />
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-[#6B7280] mb-2 font-medium">Fuel Type</label>
-                <div className="space-y-2">
-                  {['Petrol', 'Diesel', 'Hybrid', 'Electric'].map((fuel) => (
-                    <label key={fuel} className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="w-4 h-4" />
-                      {fuel}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-[#6B7280] mb-2 font-medium">Transmission</label>
-                <div className="space-y-2">
-                  {['Automatic', 'Manual'].map((trans) => (
-                    <label key={trans} className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="w-4 h-4" />
-                      {trans}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-[#6B7280] mb-2 font-medium">Price Range</label>
-                <div className="flex gap-2">
-                  <input type="number" placeholder="Min" className="w-1/2 p-3 border border-gray-300 rounded-lg" />
-                  <input type="number" placeholder="Max" className="w-1/2 p-3 border border-gray-300 rounded-lg" />
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-[#6B7280] mb-2 font-medium">Mileage</label>
-                <div className="flex gap-2">
-                  <input type="number" placeholder="Max" className="w-full p-3 border border-gray-300 rounded-lg" />
-                </div>
-              </div>
-              
-              <button className="w-full btn-primary">Apply Filters</button>
-            </div>
+            <CarSidebar />
           </div>
           
           {/* Main Content */}
           <div className="lg:w-3/4">
             {/* Sorting */}
             <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm">
-              <p className="text-[#6B7280]">{filteredCars.length} results</p>
-              <select className="border border-gray-300 rounded-lg px-4 py-2">
+              <p className="text-[#6B7280]">{sortedCars.length} results</p>
+              <select 
+                className="border border-gray-300 rounded-lg px-4 py-2"
+                value={
+                  filters.sort === "price-low" 
+                    ? "Price: Low to High" 
+                    : filters.sort === "price-high" 
+                      ? "Price: High to Low" 
+                      : filters.sort === "mileage-low" 
+                        ? "Mileage: Low to High" 
+                        : "Sort by: Newest"
+                }
+                onChange={(e) => handleSortChange(e.target.value)}
+              >
                 <option>Sort by: Newest</option>
                 <option>Price: Low to High</option>
                 <option>Price: High to Low</option>
