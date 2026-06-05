@@ -149,12 +149,12 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-[#0B1F3A] mb-8">Settings</h1>
+    <div className="p-4 md:p-8">
+      <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A] mb-8">Settings</h1>
 
       <div className="grid gap-8">
         {session?.user?.email === ORIGINAL_ADMIN_EMAIL && (
-          <div className="bg-white rounded-xl shadow-md p-6">
+          <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
             <h2 className="text-xl font-semibold text-[#0B1F3A] mb-6">Admin Users</h2>
             
             {addUserMessage && (
@@ -167,7 +167,7 @@ export default function AdminSettings() {
 
             <div className="mb-8">
               <h3 className="text-lg font-medium text-[#0B1F3A] mb-4">Add New Admin</h3>
-              <form onSubmit={handleAddUser} className="flex gap-4 max-w-2xl">
+              <form onSubmit={handleAddUser} className="flex flex-col md:flex-row gap-4 max-w-2xl">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-[#0B1F3A] mb-2">Email</label>
                   <input
@@ -197,11 +197,11 @@ export default function AdminSettings() {
                     </button>
                   </div>
                 </div>
-                <div className="self-end">
+                <div className="self-end w-full md:w-auto">
                   <button
                     type="submit"
                     disabled={addUserLoading}
-                    className="bg-[#C9A84C] hover:bg-[#b89744] text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[#C9A84C] hover:bg-[#b89744] text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
                   >
                     {addUserLoading ? 'Adding...' : 'Add Admin'}
                   </button>
@@ -216,7 +216,7 @@ export default function AdminSettings() {
               ) : (
                 <div className="divide-y divide-slate-200 border border-slate-200 rounded-lg overflow-hidden">
                   {users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4">
+                    <div key={user.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 gap-2">
                       <div>
                         <p className="font-medium text-[#0B1F3A]">{user.email}</p>
                         <p className="text-sm text-slate-500">Added: {new Date(user.createdAt).toLocaleDateString()}</p>
@@ -235,7 +235,7 @@ export default function AdminSettings() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
           <h2 className="text-xl font-semibold text-[#0B1F3A] mb-6">Change Password</h2>
           
           {passwordMessage && (
@@ -310,7 +310,7 @@ export default function AdminSettings() {
             <button
               type="submit"
               disabled={passwordLoading}
-              className="bg-[#C9A84C] hover:bg-[#b89744] text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#C9A84C] hover:bg-[#b89744] text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             >
               {passwordLoading ? 'Updating...' : 'Update Password'}
             </button>

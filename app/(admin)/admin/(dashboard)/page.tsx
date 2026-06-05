@@ -30,25 +30,28 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <h1 className="text-3xl font-bold text-[#0B1F3A] mb-8">Admin Dashboard</h1>
+      <div className="p-4 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A] mb-8">Admin Dashboard</h1>
         <p className="text-slate-500">Loading dashboard...</p>
       </div>
     );
   }
 
-  const forSale = properties.filter(p => p.status === 'available');
+  const available = properties.filter(p => p.status === 'available');
+  const pending = properties.filter(p => p.status === 'pending');
+  const sold = properties.filter(p => p.status === 'sold');
   const unreadInquiries = inquiries.filter(i => !i.isRead);
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-[#0B1F3A] mb-8">Admin Dashboard</h1>
+    <div className="p-4 md:p-8">
+      <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A] mb-8">Admin Dashboard</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         {[
           { label: 'Total Properties', value: properties.length, icon: '🏠', color: 'bg-blue-500' },
-          { label: 'Available', value: forSale.length, icon: '💰', color: 'bg-green-500' },
-          { label: 'Sold', value: properties.length - forSale.length, icon: '🏷️', color: 'bg-yellow-500' },
+          { label: 'Available', value: available.length, icon: '💰', color: 'bg-green-500' },
+          { label: 'In Talks', value: pending.length, icon: '💬', color: 'bg-yellow-500' },
+          { label: 'Sold', value: sold.length, icon: '🏷️', color: 'bg-red-500' },
           { label: 'Inquiries', value: inquiries.length, icon: '📩', color: 'bg-purple-500', subValue: unreadInquiries.length > 0 ? `${unreadInquiries.length} unread` : '' },
         ].map((stat, i) => (
           <div key={i} className="bg-white rounded-xl shadow-md p-6">
@@ -79,7 +82,9 @@ export default function AdminDashboard() {
               </div>
               <div className="text-right">
                 <p className="font-bold text-[#0B1F3A]">${property.price.toLocaleString()}</p>
-                <p className="text-slate-500 text-sm">{property.status === 'available' ? 'Available' : 'Sold'}</p>
+                <p className="text-slate-500 text-sm">
+                  {property.status === 'available' ? 'Available' : property.status === 'pending' ? 'In Talks' : 'Sold'}
+                </p>
               </div>
             </div>
           ))}

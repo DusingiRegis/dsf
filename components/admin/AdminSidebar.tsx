@@ -3,12 +3,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 
 const ORIGINAL_ADMIN_EMAIL = 'admin@defrealestate.com';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Close menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   const navItems = [
     { name: 'Dashboard', href: '/admin', icon: '📊' },
@@ -21,8 +28,8 @@ export default function AdminSidebar() {
     { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
   ];
 
-  return (
-    <aside className="w-64 bg-[#0B1F3A] text-white flex flex-col h-screen sticky top-0">
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-[#C9A84C] rounded-lg flex items-center justify-center font-bold text-xl">
@@ -61,6 +68,48 @@ export default function AdminSidebar() {
           <span className="font-medium">Logout</span>
         </Link>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#0B1F3A] text-white px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-[#C9A84C] rounded-lg flex items-center justify-center font-bold text-lg">
+            D
+          </div>
+          <span className="font-bold">D.E.F Admin</span>
+        </div>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="text-2xl p-2 rounded-lg hover:bg-slate-800 transition-all"
+        >
+          {isMobileMenuOpen ? '✕' : '☰'}
+        </button>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar */}
+      <aside
+        className={`lg:hidden fixed top-0 left-0 h-full w-64 bg-[#0B1F3A] text-white z-50 transform transition-transform duration-300 ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-64 bg-[#0B1F3A] text-white flex flex-col h-screen sticky top-0">
+        <SidebarContent />
+      </aside>
+    </>
   );
 }

@@ -12,7 +12,7 @@ interface Property {
   id: string;
   title: string;
   type: 'house' | 'apartment' | 'plot' | 'commercial';
-  status: 'rent' | 'sale';
+  status: string;
   category: string;
   price: number;
   location: string;
@@ -31,7 +31,7 @@ interface Property {
 const PROPERTIES_PER_PAGE = 10;
 
 interface Filters {
-  status: 'all' | 'rent' | 'sale';
+  status: 'all' | 'available' | 'sold' | 'pending';
   type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished';
   location: string;
   minPrice: number | null;
@@ -69,8 +69,7 @@ export default function PropertiesPage() {
         params.set('type', filters.type);
       }
       if (filters.status !== 'all') {
-        // Map 'rent'/'sale' to 'available' for API (since that's what our API uses)
-        params.set('status', 'available');
+        params.set('status', filters.status);
       }
       if (filters.location) {
         params.set('location', filters.location);
@@ -105,7 +104,7 @@ export default function PropertiesPage() {
           id: prop.id,
           title: prop.title,
           type: prop.type as any,
-          status: 'sale' as const, // Default to sale, we can adjust based on status later
+          status: prop.status,
           category,
           price: prop.price,
           location: prop.location,
@@ -135,7 +134,7 @@ export default function PropertiesPage() {
     const statusParam = searchParams.get('status');
     
     const newFilters: Filters = {
-      status: (statusParam as 'rent' | 'sale') || 'all',
+      status: (statusParam as 'available' | 'sold' | 'pending') || 'all',
       type: (typeParam as 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished') || 'all',
       location: searchParams.get('location') || '',
       minPrice: searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : null,
@@ -236,16 +235,17 @@ export default function PropertiesPage() {
   };
 
   const getPageTitle = () => {
-    if (filters.type === "furnished" && filters.status === "rent") return "Furnished Rentals";
-    if (filters.type === "unfurnished" && filters.status === "rent") return "Unfurnished Rentals";
-    if (filters.type === "apartment" && filters.status === "rent") return "Rental Apartments";
-    if (filters.type === "commercial" && filters.status === "rent") return "Commercial Rentals";
-    if (filters.type === "house" && filters.status === "sale") return "Houses for Sale";
-    if (filters.type === "plot" && filters.status === "sale") return "Plots / Land Sales";
-    if (filters.type === "apartment" && filters.status === "sale") return "Sales Apartments";
-    if (filters.type === "commercial" && filters.status === "sale") return "Commercial Sales";
-    if (filters.status === "rent") return "All Rentals";
-    if (filters.status === "sale") return "All Sales";
+    if (filters.type === "furnished" && filters.status === "available") return "Furnished Available";
+    if (filters.type === "unfurnished" && filters.status === "available") return "Unfurnished Available";
+    if (filters.type === "apartment" && filters.status === "available") return "Available Apartments";
+    if (filters.type === "commercial" && filters.status === "available") return "Commercial Available";
+    if (filters.type === "house" && filters.status === "available") return "Houses for Sale";
+    if (filters.type === "plot" && filters.status === "available") return "Plots / Land Sales";
+    if (filters.type === "apartment" && filters.status === "available") return "Sales Apartments";
+    if (filters.type === "commercial" && filters.status === "available") return "Commercial Sales";
+    if (filters.status === "sold") return "Sold Out Properties";
+    if (filters.status === "pending") return "In Talks Properties";
+    if (filters.status === "available") return "Available Properties";
     return "All Properties";
   };
 
@@ -267,8 +267,8 @@ export default function PropertiesPage() {
         
         <h1 className="text-3xl md:text-4xl font-bold text-[#0B1F3A] mb-8">{getPageTitle()}</h1>
 
-        {/* Rental/Sales Tabs */}
-        <div className="flex gap-4 mb-8">
+        {/* Available/Sold/In Talks Tabs */}
+        <div className="flex gap-4 mb-8 flex-wrap">
           <button
             onClick={() => handleFilterChange({ status: 'all' }, true)}
             className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
@@ -280,24 +280,34 @@ export default function PropertiesPage() {
             All
           </button>
           <button
-            onClick={() => handleFilterChange({ status: 'rent' }, true)}
+            onClick={() => handleFilterChange({ status: 'available' }, true)}
             className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              filters.status === 'rent'
+              filters.status === 'available'
                 ? 'bg-[#C9A84C] text-white'
                 : 'bg-white text-[#0B1F3A] hover:bg-[#C9A84C]/5'
             }`}
           >
-            Rentals
+            Available
           </button>
           <button
-            onClick={() => handleFilterChange({ status: 'sale' }, true)}
+            onClick={() => handleFilterChange({ status: 'pending' }, true)}
             className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              filters.status === 'sale'
+              filters.status === 'pending'
                 ? 'bg-[#C9A84C] text-white'
                 : 'bg-white text-[#0B1F3A] hover:bg-[#C9A84C]/5'
             }`}
           >
-            Sales
+            In Talks
+          </button>
+          <button
+            onClick={() => handleFilterChange({ status: 'sold' }, true)}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+              filters.status === 'sold'
+                ? 'bg-[#C9A84C] text-white'
+                : 'bg-white text-[#0B1F3A] hover:bg-[#C9A84C]/5'
+            }`}
+          >
+            Sold Out
           </button>
         </div>
 

@@ -6,7 +6,19 @@ import SearchPanel from '@/components/public/SearchPanel';
 import CategoryGrid from '@/components/public/CategoryGrid';
 import PropertyCard from '@/components/public/PropertyCard';
 
-const dummyCars = [
+const dummyCars: Array<{
+  id: string;
+  title: string;
+  brand: string;
+  model: string;
+  year: number;
+  price: number;
+  mileage: number;
+  fuelType: string;
+  transmission: string;
+  status: 'rent' | 'sale';
+  image: string;
+}> = [
   {
     id: "1",
     title: "2023 Toyota Land Cruiser",
@@ -17,7 +29,7 @@ const dummyCars = [
     mileage: 12000,
     fuelType: "Petrol",
     transmission: "Automatic",
-    status: "sale" as const,
+    status: "sale",
     image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20white%20car&image_size=landscape_16_9"
   },
   {
@@ -30,7 +42,7 @@ const dummyCars = [
     mileage: 25000,
     fuelType: "Petrol",
     transmission: "Automatic",
-    status: "sale" as const,
+    status: "rent",
     image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=mercedes%20benz%20c%20class%20black%20car&image_size=landscape_16_9"
   },
   {
@@ -43,7 +55,7 @@ const dummyCars = [
     mileage: 35000,
     fuelType: "Diesel",
     transmission: "Automatic",
-    status: "sale" as const,
+    status: "sale",
     image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=bmw%20x5%20suv%20car&image_size=landscape_16_9"
   },
   {
@@ -56,7 +68,7 @@ const dummyCars = [
     mileage: 5000,
     fuelType: "Hybrid",
     transmission: "Automatic",
-    status: "sale" as const,
+    status: "rent",
     image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=honda%20crv%20suv%20car&image_size=landscape_16_9"
   }
 ];
@@ -72,7 +84,7 @@ export default function HomePage() {
       const data = await response.json();
       
       const formattedProperties = data.map((prop: any) => {
-        let image = "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=real%20estate%20property%20property%20estate&image_size=landscape_16_9";
+        let image = "https://coresg-normal.trae.ai/api/ide/v1/text-to-image?prompt=real%20estate%20property%20property%20estate&image_size=landscape_16_9";
         if (prop.images) {
           try {
             const imagesArray = JSON.parse(prop.images);
@@ -92,7 +104,7 @@ export default function HomePage() {
           id: prop.id,
           title: prop.title,
           type: prop.type,
-          status: "sale" as const,
+          status: prop.status,
           category: category,
           price: prop.price,
           location: prop.location,

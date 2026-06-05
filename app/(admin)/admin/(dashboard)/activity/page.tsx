@@ -30,8 +30,8 @@ export default function AdminActivity() {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <h1 className="text-3xl font-bold text-[#0B1F3A] mb-8">Activity</h1>
+      <div className="p-4 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A] mb-8">Activity</h1>
         <p className="text-slate-500">Loading activity...</p>
       </div>
     );
@@ -55,10 +55,10 @@ export default function AdminActivity() {
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-[#0B1F3A] mb-8">Activity</h1>
+    <div className="p-4 md:p-8">
+      <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A] mb-8">Activity</h1>
       
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
         <div className="space-y-6">
           {activities.map((activity) => (
             <div key={activity.id} className="flex items-start gap-4 pb-6 border-b border-slate-200 last:border-0 last:pb-0">

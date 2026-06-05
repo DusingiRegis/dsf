@@ -5,7 +5,7 @@ interface PropertyCardProps {
     id: string;
     title: string;
     type: string;
-    status: 'rent' | 'sale';
+    status: string;
     category: string;
     price: number;
     location: string;
@@ -20,6 +20,18 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
+  const getStatusStyle = (status: string) => {
+    if (status === 'available') return 'bg-green-100 text-green-800';
+    if (status === 'pending') return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
+  const getStatusText = (status: string) => {
+    if (status === 'available') return 'Available';
+    if (status === 'pending') return 'In Talks';
+    return 'Sold Out';
+  };
+  
   return (
     <Link
       href={`/properties/${property.id}`}
@@ -32,8 +44,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       <div className="p-6 flex flex-col flex-1">
         <div className="flex gap-2 mb-3">
           <span className="badge-category">{property.category}</span>
-          <span className={property.status === 'rent' ? 'badge-rent' : 'badge-sale'}>
-            {property.status === 'rent' ? 'For Rent' : 'For Sale'}
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyle(property.status)}`}>
+            {getStatusText(property.status)}
           </span>
         </div>
         <h3 className="text-xl font-semibold text-[#0B1F3A] mb-2">{property.title}</h3>

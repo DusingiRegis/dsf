@@ -54,15 +54,15 @@ export default function AdminRegisterPage() {
 
   if (status === 'loading') {
     return (
-      <div className="p-8">
-        <h1 className="text-3xl font-bold text-[#0B1F3A]">Loading...</h1>
+      <div className="p-4 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A]">Loading...</h1>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-[#0B1F3A] mb-8">Register New Admin</h1>
+    <div className="p-4 md:p-8">
+      <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A] mb-8">Register New Admin</h1>
 
       <div className="max-w-md">
         {message && (
