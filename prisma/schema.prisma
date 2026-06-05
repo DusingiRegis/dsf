@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// PROPERTIES TABLE
+// ─────────────────────────────────────────
+model Property {
+  id          String     @id @default(cuid())
+  title       String
+  type        String     // "house" | "apartment" | "plot" | "commercial"
+  listingType String     @default("sale") // "rent" | "sale"
+  price       Float
+  location    String
+  size        Float      // in sqm or acres
+  bedrooms    Int?       // null for plots
+  bathrooms   Int?       // null for plots
+  description String
+  images      String     // JSON stringified array of URLs
+  videos      String     // JSON stringified array of URLs
+  status      String     @default("available") // "available" | "pending" | "sold"
+  featured    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  inquiries   Inquiry[]
+}
+
+// ─────────────────────────────────────────
+// INQUIRIES TABLE
+// ─────────────────────────────────────────
+model Inquiry {
+  id         String    @id @default(cuid())
+  name       String
+  email      String
+  phone      String
+  message    String
+  isRead     Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  property   Property? @relation(fields: [propertyId], references: [id])
+  propertyId String?
+}
+
+// ─────────────────────────────────────────
+// ADMIN USERS TABLE
+// ─────────────────────────────────────────
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String   // bcrypt hashed
+  role          String   @default("admin")
+  isSuperAdmin  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
