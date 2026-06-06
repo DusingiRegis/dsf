@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
   useEffect(() => {
     // If already logged in redirect to dashboard
     if (status === 'authenticated') {
-      router.push('/admin/activity');
+      router.push('/admin');
       return;
     }
 
@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
       }
 
       // Redirect to admin dashboard on success
-      router.push('/admin/activity');
+      router.push('/admin');
       router.refresh();
     } catch (err) {
       setError('Invalid email or password');
@@ -65,7 +65,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-admin-bg">
-      <div className="bg-admin-card p-8 rounded-xl shadow-lg w-full max-w-md">
+      <div className="bg-admin-card p-8 rounded-xl shadow-md w-full max-w-md">
         <h1 className="font-serif text-3xl font-bold text-white mb-2 text-center">Admin Access</h1>
         <p className="text-gray-400 text-center text-sm mb-6">Restricted area</p>
         <form onSubmit={handleSubmit} className="space-y-4">
