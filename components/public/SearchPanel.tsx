@@ -13,9 +13,9 @@ export default function SearchPanel() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
+    <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
       <form onSubmit={handleSearch} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <select className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent">
             <option>Status: All</option>
             <option>For Rent</option>
@@ -34,7 +34,7 @@ export default function SearchPanel() {
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent"
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <select className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent">
             <option>Min Price</option>
             <option>$10,000</option>
@@ -63,13 +63,13 @@ export default function SearchPanel() {
             <option>3+</option>
           </select>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
             placeholder="Keywords..."
             className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent"
           />
-          <button type="submit" className="bg-[#C9A84C] hover:bg-[#B8973D] px-6 py-3 rounded-lg text-white font-semibold transition-colors flex items-center gap-2">
+          <button type="submit" className="w-full sm:w-auto bg-[#C9A84C] hover:bg-[#B8973D] px-6 py-3 rounded-lg text-white font-semibold transition-colors flex items-center justify-center gap-2">
             🔍 Search
           </button>
         </div>

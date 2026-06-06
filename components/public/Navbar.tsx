@@ -142,20 +142,20 @@ export default function Navbar() {
         isScrolled ? 'shadow-xl py-1' : 'py-3'
       }`}
     >
-      <div className="container mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center">
           <Link
             href="/"
-            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+            className="flex items-center gap-3 transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer flex-shrink-0"
           >
             <Image
               src="/logo6.png"
               alt="D.E.F Real Estate Logo"
-              width={80}
-              height={80}
+              width={60}
+              height={60}
               className="rounded-lg shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 object-contain"
             />
-            <span className="font-bold text-xl text-white">D.E.F Real Estate</span>
+            <span className="font-bold text-lg sm:text-xl text-white whitespace-nowrap">D.E.F Real Estate</span>
           </Link>
 
           {/* Desktop Menu */}
