@@ -5,8 +5,6 @@ import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 
-const ORIGINAL_ADMIN_EMAIL = 'admin@defrealestate.com';
-
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -22,8 +20,11 @@ export default function AdminSidebar() {
     { name: 'Properties', href: '/admin/properties', icon: '🏠' },
     { name: 'Inquiries', href: '/admin/inquiries', icon: '📩' },
     { name: 'Activity', href: '/admin/activity', icon: '📈' },
-    ...(session?.user?.email === ORIGINAL_ADMIN_EMAIL
-      ? [{ name: 'Register Admin', href: '/admin/register', icon: '👤' }]
+    ...(session?.user?.isSuperAdmin
+      ? [
+          { name: 'Manage Admins', href: '/admin/manage-admins', icon: '👥' },
+          { name: 'Register Admin', href: '/admin/register', icon: '👤' },
+        ]
       : []),
     { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
   ];

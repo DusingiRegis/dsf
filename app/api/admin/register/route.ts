@@ -4,8 +4,6 @@ import bcrypt from 'bcryptjs';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
-const ORIGINAL_ADMIN_EMAIL = 'admin@defrealestate.com';
-
 export async function POST(req: Request) {
   try {
     console.log('POST /api/admin/register called');
@@ -17,9 +15,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.user.email !== ORIGINAL_ADMIN_EMAIL) {
-      console.log('Unauthorized: Not original admin');
-      return NextResponse.json({ error: 'Only original admin can add new admins' }, { status: 403 });
+    if (!session.user.isSuperAdmin) {
+      console.log('Unauthorized: Not super admin');
+      return NextResponse.json({ error: 'Only super admins can add new admins' }, { status: 403 });
     }
 
     const { email, password } = await req.json();
@@ -75,12 +73,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.user.email !== ORIGINAL_ADMIN_EMAIL) {
-      return NextResponse.json({ error: 'Only original admin can view admin users' }, { status: 403 });
+    if (!session.user.isSuperAdmin) {
+      return NextResponse.json({ error: 'Only super admins can view admin users' }, { status: 403 });
     }
 
     const users = await prisma.user.findMany({
-      select: { id: true, email: true, role: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, isSuperAdmin: true, createdAt: true },
     });
     return NextResponse.json(users);
   } catch (error) {
@@ -101,8 +99,8 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.user.email !== ORIGINAL_ADMIN_EMAIL) {
-      return NextResponse.json({ error: 'Only original admin can delete admins' }, { status: 403 });
+    if (!session.user.isSuperAdmin) {
+      return NextResponse.json({ error: 'Only super admins can delete admins' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);

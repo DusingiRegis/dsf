@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-const ORIGINAL_ADMIN_EMAIL = 'admin@defrealestate.com';
-
 export default function AdminRegisterPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -19,7 +17,7 @@ export default function AdminRegisterPage() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
-    } else if (status === 'authenticated' && session?.user?.email !== ORIGINAL_ADMIN_EMAIL) {
+    } else if (status === 'authenticated' && !session?.user?.isSuperAdmin) {
       router.push('/admin');
     }
   }, [status, session, router]);
