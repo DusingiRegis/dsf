@@ -8,7 +8,7 @@ import { signIn, useSession } from 'next-auth/react';
 export default function AdminLoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [formVisible, setFormVisible] = useState(false);
+  const [formVisible, setFormVisible] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,13 +22,9 @@ export default function AdminLoginPage() {
       return;
     }
 
-    // Only show the form after a short delay
-    // and only if accessed correctly
+    // Show form immediately
     if (status === 'unauthenticated') {
-      const timer = setTimeout(() => {
-        setFormVisible(true);
-      }, 500);
-      return () => clearTimeout(timer);
+      setFormVisible(true);
     }
   }, [status, router]);
 
@@ -53,9 +49,6 @@ export default function AdminLoginPage() {
       router.refresh();
     } catch (err) {
       setError('Invalid email or password');
-      // HIDE the form again after wrong attempt
-      setFormVisible(false);
-      setTimeout(() => setFormVisible(true), 3000);
     } finally {
       setLoading(false);
     }
