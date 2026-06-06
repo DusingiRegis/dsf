@@ -64,6 +64,10 @@ const authOptions: AuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith(baseUrl)) return url;
+      return `${baseUrl}/admin`;
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
