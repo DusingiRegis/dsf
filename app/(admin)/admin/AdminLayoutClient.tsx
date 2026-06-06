@@ -12,15 +12,19 @@ export default function AdminLayoutClient({
   const isLoginPage = pathname === '/admin/login';
 
   if (isLoginPage) {
-    return <>{children}</>;
+    return (
+      <div className="min-h-screen bg-[#0B1F3A]">
+        {children}
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
+    <div className="min-h-screen flex">
       <AdminSidebar />
-      <div className="flex-1 pt-16 lg:pt-0">
+      <main className="flex-1 p-6 bg-gray-100 overflow-auto">
         {children}
-      </div>
+      </main>
     </div>
   );
 }
