@@ -1,23 +1,33 @@
 // middleware.ts
+import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 
-export function middleware(req: NextRequest) {
-  const pathname = req.nextUrl.pathname
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token
+    const isLoginPage = req.nextUrl.pathname === "/admin/login"
 
-  // Block EVERY admin route permanently
-  if (pathname.startsWith("/admin")) {
-    // Send them to homepage — no explanation, no login page
-    return NextResponse.redirect(new URL("/", req.url))
+    // If logged in and trying to visit login page
+    // redirect to dashboard instead
+    if (isLoginPage && token) {
+      return NextResponse.redirect(new URL("/admin", req.url))
+    }
+
+    return NextResponse.next()
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        const isLoginPage = req.nextUrl.pathname === "/admin/login"
+        // Allow login page always
+        // Block everything else without token
+        if (isLoginPage) return true
+        return !!token
+      },
+    },
   }
+)
 
-  return NextResponse.next()
-}
-
-// Apply to ALL admin routes
 export const config = {
-  matcher: [
-    "/admin",
-    "/admin/:path*",
-  ],
+  matcher: ["/admin", "/admin/:path*"],
 }
