@@ -142,10 +142,10 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-[#0B1F3A]/80" />
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center mb-10">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4">
               Find Your Perfect Property in Rwanda
             </h1>
-            <p className="text-xl text-white/90">
+            <p className="text-base sm:text-lg md:text-xl text-white/90">
               Houses, Apartments, Plots & Cars — All in One Place
             </p>
           </div>
