@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
@@ -33,9 +34,13 @@ export default function AdminSidebar() {
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#C9A84C] rounded-lg flex items-center justify-center font-bold text-xl">
-            D
-          </div>
+          <Image
+            src="/logo6.png"
+            alt="D.E.F Admin Logo"
+            width={40}
+            height={40}
+            className="rounded-lg object-contain"
+          />
           <span className="font-bold text-lg">D.E.F Admin</span>
         </div>
       </div>
@@ -84,9 +89,13 @@ export default function AdminSidebar() {
       {/* Mobile header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#0B1F3A] text-white px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#C9A84C] rounded-lg flex items-center justify-center font-bold text-lg">
-            D
-          </div>
+          <Image
+            src="/logo6.png"
+            alt="D.E.F Admin Logo"
+            width={32}
+            height={32}
+            className="rounded-lg object-contain"
+          />
           <span className="font-bold">D.E.F Admin</span>
         </div>
         <button
