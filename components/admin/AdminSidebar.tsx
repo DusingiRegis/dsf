@@ -60,7 +60,7 @@ export default function AdminSidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-700 space-y-2">
+      <div className="p-4 border-t border-slate-700 bg-[#0B1F3A] flex flex-col gap-2">
         <Link
           href="/"
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-all"
