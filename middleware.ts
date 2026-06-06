@@ -6,6 +6,12 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token
     const isLoginPage = req.nextUrl.pathname === "/admin/login"
+    const isAdminHomepage = req.nextUrl.pathname === "/admin"
+
+    // Redirect /admin homepage to /
+    if (isAdminHomepage) {
+      return NextResponse.redirect(new URL("/", req.url))
+    }
 
     // If logged in and trying to visit login page
     // redirect to dashboard instead
@@ -19,9 +25,10 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const isLoginPage = req.nextUrl.pathname === "/admin/login"
-        // Allow login page always
+        const isAdminHomepage = req.nextUrl.pathname === "/admin"
+        // Allow login page always, and admin homepage (which redirects anyway)
         // Block everything else without token
-        if (isLoginPage) return true
+        if (isLoginPage || isAdminHomepage) return true
         return !!token
       },
     },
