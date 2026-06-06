@@ -16,7 +16,7 @@ export default withAuth(
     // If logged in and trying to visit login page
     // redirect to dashboard instead
     if (isLoginPage && token) {
-      return NextResponse.redirect(new URL("/admin", req.url))
+      return NextResponse.redirect(new URL("/admin/activity", req.url))
     }
 
     return NextResponse.next()

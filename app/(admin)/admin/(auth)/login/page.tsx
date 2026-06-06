@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
   useEffect(() => {
     // If already logged in redirect to dashboard
     if (status === 'authenticated') {
-      router.push('/admin');
+      router.push('/admin/activity');
       return;
     }
 
@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
       }
 
       // Redirect to admin dashboard on success
-      router.push('/admin');
+      router.push('/admin/activity');
       router.refresh();
     } catch (err) {
       setError('Invalid email or password');
