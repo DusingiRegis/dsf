@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 
 const ORIGINAL_ADMIN_EMAIL = 'admin@defrealestate.com';
@@ -67,13 +67,13 @@ export default function AdminSidebar() {
           <span className="text-xl">🏠</span>
           <span className="font-medium">Return to Home</span>
         </Link>
-        <Link
-          href="/admin/login"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-all"
+        <button
+          onClick={() => signOut()}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-all w-full text-left"
         >
           <span className="text-xl">🚪</span>
           <span className="font-medium">Logout</span>
-        </Link>
+        </button>
       </div>
     </div>
   );
