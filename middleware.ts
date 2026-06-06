@@ -6,33 +6,42 @@ import type { NextRequest } from "next/server"
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
-  // Check if user has a valid session/token
+  const isLoginPage  = pathname === "/admin/login"
+  const isAdminRoute = pathname.startsWith("/admin")
+
+  // Get session token
   const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
   })
 
-  const isLoginPage = pathname === "/admin/login"
-  const isAdminRoute = pathname.startsWith("/admin")
-
-  // ✅ If on login page and NOT logged in — allow through
+  // LOGIN PAGE
   if (isLoginPage && !token) {
     return NextResponse.next()
   }
 
-  // ✅ If on login page and ALREADY logged in
-  // skip login page and go straight to dashboard
   if (isLoginPage && token) {
-    return NextResponse.redirect(new URL("/admin", req.url))
+    const role = token.role as string
+    if (role === "admin" || role === "super_admin") {
+      return NextResponse.redirect(new URL("/admin", req.url))
+    }
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
-  // ❌ If on any admin page and NOT logged in
-  // send to login page first
-  if (isAdminRoute && !token) {
-    return NextResponse.redirect(new URL("/admin/login", req.url))
+  // ALL OTHER ADMIN ROUTES
+  if (isAdminRoute) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/admin/login", req.url))
+    }
+
+    const role = token.role as string
+    if (role !== "admin" && role !== "super_admin") {
+      return NextResponse.redirect(new URL("/", req.url))
+    }
+
+    return NextResponse.next()
   }
 
-  // ✅ Logged in and on admin page — allow through
   return NextResponse.next()
 }
 
