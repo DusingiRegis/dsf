@@ -17,7 +17,7 @@ export default function HomePage() {
       const data = await response.json();
       
       const formattedProperties = data.map((prop: any) => {
-        let image = "https://coresg-normal.trae.ai/api/ide/v1/text-to-image?prompt=real%20estate%20property%20property%20estate&image_size=landscape_16_9";
+        let image = "";
         if (prop.images) {
           try {
             const imagesArray = JSON.parse(prop.images);
@@ -66,13 +66,7 @@ export default function HomePage() {
   return (
     <main>
       {/* Hero Section */}
-      <section
-        className="relative py-20 bg-cover bg-center"
-        style={{
-          backgroundImage: `url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20real%20estate%20hero%20background%20property&image_size=landscape_16_9')`
-        }}
-      >
-        <div className="absolute inset-0 bg-[#0B1F3A]/80" />
+      <section className="relative py-20 bg-[#0B1F3A]">
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center mb-10">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4">
