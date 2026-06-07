@@ -148,15 +148,22 @@ export default function EditPropertyPage() {
           if (res.ok) {
             const data = await res.json()
             uploadedUrls.push(data.url)
+          } else {
+            const data = await res.json()
+            console.error("Upload error:", data)
+            setError(data.error || "Failed to upload image")
           }
         }
 
-        // Add new images to existing ones
-        const updated = [...previewImages, ...uploadedUrls]
-        setPreviewImages(updated)
-        setForm((prev) => ({ ...prev, images: updated }))
+        if (uploadedUrls.length > 0) {
+          // Add new images to existing ones
+          const updated = [...previewImages, ...uploadedUrls]
+          setPreviewImages(updated)
+          setForm((prev) => ({ ...prev, images: updated }))
+        }
 
       } catch (err) {
+        console.error("Upload error:", err)
         setError("Failed to upload images")
       } finally {
         setUploading(false)
