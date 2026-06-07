@@ -1,4 +1,9 @@
+"use client"
+
+import { useState } from 'react';
 import Link from 'next/link';
+
+const DEFAULT_IMAGE = "https://coresg-normal.trae.ai/api/ide/v1/text-to-image?prompt=real%20estate%20property&image_size=landscape_16_9";
 
 interface PropertyCardProps {
   property: {
@@ -22,6 +27,8 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
+  const [imageSrc, setImageSrc] = useState(property.image || DEFAULT_IMAGE);
+
   const getStatusStyle = (status: string) => {
     if (status === 'available') return 'bg-green-100 text-green-800';
     if (status === 'pending') return 'bg-yellow-100 text-yellow-800';
@@ -39,10 +46,14 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       href={`/properties/${property.id}`}
       className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col md:flex-row"
     >
-      <div
-        className="w-full md:w-80 h-56 md:h-auto bg-cover bg-center flex-shrink-0"
-        style={{ backgroundImage: `url(${property.image})` }}
-      />
+      <div className="w-full md:w-80 h-56 md:h-auto flex-shrink-0 overflow-hidden">
+        <img
+          src={imageSrc}
+          alt={property.title}
+          className="w-full h-full object-cover"
+          onError={() => setImageSrc(DEFAULT_IMAGE)}
+        />
+      </div>
       <div className="p-6 flex flex-col flex-1">
         <div className="flex gap-2 mb-3">
           <span className="badge-category">{property.category}</span>
