@@ -41,22 +41,24 @@ export default function PropertyDetailPage() {
     setLoading(true);
     try {
       const response = await fetch(`/api/properties/${id}`);
+      
+      if (!response.ok) {
+        setLoading(false);
+        return;
+      }
+      
       const data = await response.json();
       
       // Parse images
-      let images = [
-        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=real%20estate%20property%20placeholder&image_size=landscape_16_9"
-      ];
+      let images: string[] = [];
       if (data.images) {
         try {
-          images = JSON.parse(data.images);
+          images = data.images;
           if (images.length === 0) {
-            images = [
-              "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=real%20estate%20property%20placeholder&image_size=landscape_16_9"
-            ];
+            images = [];
           }
         } catch (e) {
-          images = [data.images];
+          images = [];
         }
       }
       
@@ -106,7 +108,7 @@ export default function PropertyDetailPage() {
         .filter((p: any) => p.id !== id)
         .slice(0, 3)
         .map((p: any) => {
-          let simImage = "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=real%20estate%20property%20placeholder&image_size=landscape_16_9";
+          let simImage = "";
           if (p.images) {
             try {
               const simImages = JSON.parse(p.images);
@@ -218,19 +220,27 @@ export default function PropertyDetailPage() {
             {/* Image Gallery */}
             <div className="mb-8">
               <div 
-                className="h-96 bg-cover bg-center rounded-xl mb-4" 
-                style={{ backgroundImage: `url(${property.images[selectedImage]})` }}
-              />
-              <div className="grid grid-cols-4 gap-2">
-                {property.images.map((img, idx) => (
-                  <div 
-                    key={idx}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`h-24 bg-cover bg-center rounded-lg cursor-pointer ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
-                    style={{ backgroundImage: `url(${img})` }}
-                  />
-                ))}
+                className="h-96 bg-[#0B1F3A] rounded-xl mb-4 flex items-center justify-center" 
+                style={
+                  property.images.length > 0 
+                    ? { backgroundImage: `url(${property.images[selectedImage]})` } 
+                    : {}
+                }
+              >
+                {property.images.length === 0 && <span className="text-[#C9A84C] text-4xl">🏠</span>}
               </div>
+              {property.images.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {property.images.map((img, idx) => (
+                    <div 
+                      key={idx}
+                      onClick={() => setSelectedImage(idx)}
+                      className={`h-24 bg-cover bg-center rounded-lg cursor-pointer ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
+                      style={{ backgroundImage: `url(${img})` }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
             
             {/* Title and Basic Info */}
@@ -277,8 +287,17 @@ export default function PropertyDetailPage() {
             {/* Price Box */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <p className="text-3xl font-bold text-[#0B1F3A] mb-4">
-                ${property.price.toLocaleString()}
-                {property.listingType === 'rent' && <span className="text-xl font-normal">/month</span>}
+                {property.price != null ? (
+                  <>
+                    {property.currency === 'FRW' 
+                      ? `${property.price.toLocaleString()} FRW` 
+                      : `$${property.price.toLocaleString()}`
+                    }
+                    {property.listingType === 'rent' && <span className="text-xl font-normal">/month</span>}
+                  </>
+                ) : (
+                  'Price on request'
+                )}
               </p>
               <div className="flex flex-col gap-3">
                 <a href={`tel:${property.agent.phone}`} className="btn-primary w-full text-center">📞 Contact Agent</a>
