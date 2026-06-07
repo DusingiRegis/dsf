@@ -43,6 +43,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const isSafeImage = (src: string) => {
     try {
       if (!src) return false;
+      // Allow relative paths (starting with /)
+      if (src.startsWith('/')) return true;
+      // Check full URLs
       const url = new URL(src);
       return url.protocol === 'http:' || url.protocol === 'https:';
     } catch {
