@@ -6,73 +6,6 @@ import SearchPanel from '@/components/public/SearchPanel';
 import CategoryGrid from '@/components/public/CategoryGrid';
 import PropertyCard from '@/components/public/PropertyCard';
 
-const dummyCars: Array<{
-  id: string;
-  title: string;
-  brand: string;
-  model: string;
-  year: number;
-  price: number;
-  mileage: number;
-  fuelType: string;
-  transmission: string;
-  status: 'rent' | 'sale';
-  image: string;
-}> = [
-  {
-    id: "1",
-    title: "2023 Toyota Land Cruiser",
-    brand: "Toyota",
-    model: "Land Cruiser",
-    year: 2023,
-    price: 85000,
-    mileage: 12000,
-    fuelType: "Petrol",
-    transmission: "Automatic",
-    status: "sale",
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20white%20car&image_size=landscape_16_9"
-  },
-  {
-    id: "2",
-    title: "2022 Mercedes-Benz C-Class",
-    brand: "Mercedes",
-    model: "C-Class",
-    year: 2022,
-    price: 65000,
-    mileage: 25000,
-    fuelType: "Petrol",
-    transmission: "Automatic",
-    status: "rent",
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=mercedes%20benz%20c%20class%20black%20car&image_size=landscape_16_9"
-  },
-  {
-    id: "3",
-    title: "2021 BMW X5",
-    brand: "BMW",
-    model: "X5",
-    year: 2021,
-    price: 58000,
-    mileage: 35000,
-    fuelType: "Diesel",
-    transmission: "Automatic",
-    status: "sale",
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=bmw%20x5%20suv%20car&image_size=landscape_16_9"
-  },
-  {
-    id: "4",
-    title: "2024 Honda CR-V",
-    brand: "Honda",
-    model: "CR-V",
-    year: 2024,
-    price: 45000,
-    mileage: 5000,
-    fuelType: "Hybrid",
-    transmission: "Automatic",
-    status: "rent",
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=honda%20crv%20suv%20car&image_size=landscape_16_9"
-  }
-];
-
 export default function HomePage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +13,7 @@ export default function HomePage() {
   const fetchProperties = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/properties');
+      const response = await fetch('/api/properties?featured=true');
       const data = await response.json();
       
       const formattedProperties = data.map((prop: any) => {
@@ -146,7 +79,7 @@ export default function HomePage() {
               Find Your Perfect Property in Rwanda
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-white/90">
-              Houses, Apartments, Plots & Cars — All in One Place
+              Houses, Apartments, Plots & More — All in One Place
             </p>
           </div>
           <SearchPanel />
@@ -206,7 +139,11 @@ export default function HomePage() {
                 <PropertyCard key={property.id} property={property} />
               ))}
             </div>
-          ) : null}
+          ) : (
+            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+              <p className="text-[#6B7280] text-lg">No featured properties yet.</p>
+            </div>
+          )}
           <div className="text-center mt-10">
             <Link href="/properties" className="btn-ghost text-lg">
               View All Properties →
@@ -215,70 +152,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Cars */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#0B1F3A] mb-4">
-              Featured Cars
-            </h2>
-            <p className="text-[#6B7280] max-w-2xl mx-auto">
-              Quality vehicles for every budget
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {dummyCars.map(car => (
-              <Link
-                key={car.id}
-                href={`/cars/${car.id}`}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow flex"
-              >
-                <div
-                  className="w-1/2 h-48 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${car.image})` }}
-                />
-                <div className="p-6 flex-1">
-                  <div className="flex gap-2 mb-3">
-                    <span className="badge-category">{car.brand}</span>
-                    <span className={car.status === 'rent' ? 'badge-rent' : 'badge-sale'}>
-                      {car.status === 'rent' ? 'For Rent' : 'For Sale'}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-[#0B1F3A] mb-2">{car.title}</h3>
-                  <p className="text-[#6B7280] text-sm mb-2">
-                    {car.year} • {car.mileage.toLocaleString()} km
-                  </p>
-                  <div className="flex gap-4 text-[#6B7280] text-sm mb-4">
-                    <span>⛽ {car.fuelType}</span>
-                    <span>⚙️ {car.transmission}</span>
-                  </div>
-                  <p className="text-2xl font-bold text-[#0B1F3A]">${car.price.toLocaleString()}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <div className="text-center mt-10">
-            <Link href="/cars" className="btn-ghost text-lg">
-              View All Cars →
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Stats Banner */}
       <section className="py-12 bg-[#0B1F3A]">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 text-center text-white">
             <div>
-              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">200+</h3>
+              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">0+</h3>
               <p>Properties</p>
             </div>
             <div>
-              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">50+</h3>
-              <p>Cars</p>
-            </div>
-            <div>
-              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">500+</h3>
+              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">0+</h3>
               <p>Happy Clients</p>
             </div>
             <div>
