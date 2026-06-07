@@ -12,6 +12,7 @@ interface Property {
   listingType: 'rent' | 'sale';
   category: string;
   price: number;
+  currency?: string;
   location: string;
   bedrooms?: number | null;
   bathrooms?: number | null;
