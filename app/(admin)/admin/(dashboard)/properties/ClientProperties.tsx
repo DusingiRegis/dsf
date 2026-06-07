@@ -29,13 +29,31 @@ export default function ClientProperties() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this property?')) return;
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string, title: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${title}"? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingId(id);
     try {
-      await fetch(`/api/properties/${id}`, { method: 'DELETE' });
-      setProperties(prev => prev.filter(p => p.id !== id));
+      const res = await fetch(`/api/properties/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setProperties(prev => prev.filter(p => p.id !== id));
+        alert('✅ Property deleted successfully!');
+      } else {
+        alert('❌ Failed to delete property. Please try again.');
+      }
     } catch (error) {
-      console.error('Error deleting property:', error);
+      alert('❌ Something went wrong. Please try again.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -133,12 +151,18 @@ export default function ClientProperties() {
                       {new Date(property.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </td>
                     <td className="px-6 py-4 flex gap-2">
-                      <button className="text-slate-500 hover:text-[#C9A84C] transition-colors">Edit</button>
-                      <button
-                        onClick={() => handleDelete(property.id)}
-                        className="text-slate-500 hover:text-red-500 transition-colors"
+                      <Link
+                        href={`/admin/properties/${property.id}/edit`}
+                        className="text-slate-500 hover:text-[#C9A84C] transition-colors"
                       >
-                        Delete
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(property.id, property.title)}
+                        disabled={deletingId === property.id}
+                        className="text-slate-500 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deletingId === property.id ? 'Deleting...' : 'Delete'}
                       </button>
                     </td>
                   </tr>
@@ -198,12 +222,18 @@ export default function ClientProperties() {
                     {property.listingType === 'rent' && <span className="text-sm text-slate-500 ml-1">/month</span>}
                   </p>
                   <div className="flex gap-2 pt-2">
-                    <button className="text-slate-500 hover:text-[#C9A84C] transition-colors py-2 px-4 border border-slate-200 rounded-lg">Edit</button>
-                    <button
-                      onClick={() => handleDelete(property.id)}
-                      className="text-slate-500 hover:text-red-500 transition-colors py-2 px-4 border border-slate-200 rounded-lg"
+                    <Link
+                      href={`/admin/properties/${property.id}/edit`}
+                      className="text-slate-500 hover:text-[#C9A84C] transition-colors py-2 px-4 border border-slate-200 rounded-lg"
                     >
-                      Delete
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(property.id, property.title)}
+                      disabled={deletingId === property.id}
+                      className="text-slate-500 hover:text-red-500 transition-colors py-2 px-4 border border-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {deletingId === property.id ? 'Deleting...' : 'Delete'}
                     </button>
                   </div>
                 </div>
