@@ -87,7 +87,7 @@ export default function PropertiesClient() {
       // Convert API data to our component format
       const formattedProperties = data.map((prop: any) => {
         // Parse images from JSON string
-        let image = 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=real%20estate%20property%20placeholder&image_size=landscape_16_9';
+        let image = '';
         if (prop.images) {
           try {
             const imagesArray = JSON.parse(prop.images);
