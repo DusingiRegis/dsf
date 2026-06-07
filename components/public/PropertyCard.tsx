@@ -1,7 +1,8 @@
-"use client"
+"use client";
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface PropertyCardProps {
   property: {
@@ -38,22 +39,34 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     if (status === 'pending') return 'In Talks';
     return 'Sold Out';
   };
-  
+
+  const isSafeImage = (src: string) => {
+    try {
+      if (!src) return false;
+      const url = new URL(src);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <Link
       href={`/properties/${property.id}`}
       className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col md:flex-row"
     >
-      <div className="w-full md:w-80 h-56 md:h-auto flex-shrink-0 overflow-hidden bg-[#0B1F3A] flex items-center justify-center">
-        {!imageError && property.image ? (
-          <img
+      <div className="w-full md:w-80 h-56 md:h-auto flex-shrink-0 overflow-hidden bg-[#0B1F3A] flex items-center justify-center relative">
+        {!imageError && property.image && isSafeImage(property.image) ? (
+          <Image
             src={property.image}
             alt={property.title}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
             onError={() => setImageError(true)}
+            unoptimized={!property.image.startsWith('/')}
           />
         ) : (
-          <div className="text-[#C9A84C] text-4xl">🏠</div>
+          <div className="text-[#C9A84C] text-4xl z-10">🏠</div>
         )}
       </div>
       <div className="p-6 flex flex-col flex-1">
@@ -85,8 +98,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           )}
           <div className="flex items-center gap-4">
             <span className="text-2xl font-bold text-[#0B1F3A]">
-              {property.currency === 'FRW' 
-                ? `${property.price.toLocaleString()} FRW` 
+              {property.currency === 'FRW'
+                ? `${property.price.toLocaleString()} FRW`
                 : `$${property.price.toLocaleString()}`
               }
               {property.listingType === 'rent' && <span className="text-lg font-normal">/month</span>}

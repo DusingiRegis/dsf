@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const dummyCar = {
   id: "1",
@@ -18,12 +19,7 @@ const dummyCar = {
   engine: "3.5L V6",
   drive: "4WD",
   status: "sale" as 'rent' | 'sale',
-  images: [
-    "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20white%20car%20front&image_size=landscape_16_9",
-    "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20interior&image_size=landscape_16_9",
-    "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20rear&image_size=landscape_16_9",
-    "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20side&image_size=landscape_16_9",
-  ],
+  images: [] as string[], // We'll use the placeholder instead
   description: "Immaculate 2023 Toyota Land Cruiser in perfect condition. This luxury SUV features a powerful 3.5L V6 engine, 4WD, automatic transmission, and all the latest safety and comfort features. With only 12,000 km on the odometer, this vehicle is practically new and ready for its next owner.",
   features: ["Leather Seats", "Sunroof", "Navigation System", "Bluetooth", "Backup Camera", "Heated Seats", "Apple CarPlay", "Android Auto", "Cruise Control", "Keyless Entry"],
   agent: {
@@ -35,13 +31,14 @@ const dummyCar = {
 };
 
 const similarCars = [
-  { id: "2", title: "2022 Mercedes-Benz C-Class", brand: "Mercedes", model: "C-Class", year: 2022, price: 65000, mileage: 25000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as 'rent' | 'sale', image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=mercedes%20benz%20c%20class%20black%20car&image_size=landscape_16_9" },
-  { id: "3", title: "2021 BMW X5", brand: "BMW", model: "X5", year: 2021, price: 58000, mileage: 35000, fuelType: "Diesel", transmission: "Automatic", status: "sale" as 'rent' | 'sale', image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=bmw%20x5%20suv%20car&image_size=landscape_16_9" },
+  { id: "2", title: "2022 Mercedes-Benz C-Class", brand: "Mercedes", model: "C-Class", year: 2022, price: 65000, mileage: 25000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as 'rent' | 'sale', image: "" },
+  { id: "3", title: "2021 BMW X5", brand: "BMW", model: "X5", year: 2021, price: 58000, mileage: 35000, fuelType: "Diesel", transmission: "Automatic", status: "sale" as 'rent' | 'sale', image: "" },
 ];
 
 export default function CarDetailClient() {
   useParams(); // We're not using id right now since it's static data
   const [selectedImage, setSelectedImage] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -49,6 +46,12 @@ export default function CarDetailClient() {
     alert('Thank you! Your inquiry has been sent.');
     setFormData({ name: '', email: '', phone: '', message: '' });
   };
+
+  const CarPlaceholder = () => (
+    <div className="w-full h-full bg-[#0B1F3A] flex items-center justify-center text-4xl text-[#C9A84C]">
+      🚗
+    </div>
+  );
 
   return (
     <main className="py-12 bg-[#F5F5F5]">
@@ -58,22 +61,48 @@ export default function CarDetailClient() {
           <div className="lg:w-2/3">
             {/* Image Gallery */}
             <div className="mb-8">
-              <div 
-                className="h-96 bg-cover bg-center rounded-xl mb-4" 
-                style={{ backgroundImage: `url(${dummyCar.images[selectedImage]})` }}
-              />
-              <div className="grid grid-cols-4 gap-2">
-                {dummyCar.images.map((img, idx) => (
-                  <div 
-                    key={idx}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`h-24 bg-cover bg-center rounded-lg cursor-pointer ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
-                    style={{ backgroundImage: `url(${img})` }}
+              <div className="h-96 bg-[#0B1F3A] rounded-xl mb-4 relative flex items-center justify-center overflow-hidden">
+                {dummyCar.images.length > 0 && !imageErrors[selectedImage] ? (
+                  <Image
+                    src={dummyCar.images[selectedImage]}
+                    alt={dummyCar.title}
+                    fill
+                    className="object-cover"
+                    onError={() => setImageErrors(prev => ({ ...prev, [selectedImage]: true }))}
+                    unoptimized={!dummyCar.images[selectedImage].startsWith('/')}
                   />
-                ))}
+                ) : (
+                  <CarPlaceholder />
+                )}
               </div>
+              {dummyCar.images.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {dummyCar.images.map((img, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedImage(idx)}
+                      className={`h-24 rounded-lg cursor-pointer overflow-hidden relative bg-[#0B1F3A] ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
+                    >
+                      {!imageErrors[idx] ? (
+                        <Image
+                          src={img}
+                          alt={`Car image ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          onError={() => setImageErrors(prev => ({ ...prev, [idx]: true }))}
+                          unoptimized={!img.startsWith('/')}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl text-[#C9A84C]">
+                          🚗
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            
+
             {/* Title and Basic Info */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <div className="flex gap-2 mb-3">
@@ -93,13 +122,13 @@ export default function CarDetailClient() {
                 <div>🚗 Drive: {dummyCar.drive}</div>
               </div>
             </div>
-            
+
             {/* Description */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <h2 className="text-xl font-semibold text-[#0B1F3A] mb-4">Description</h2>
               <p className="text-[#6B7280]">{dummyCar.description}</p>
             </div>
-            
+
             {/* Features */}
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h2 className="text-xl font-semibold text-[#0B1F3A] mb-4">Features</h2>
@@ -113,7 +142,7 @@ export default function CarDetailClient() {
               </div>
             </div>
           </div>
-          
+
           {/* Right Column - Sidebar */}
           <div className="lg:w-1/3">
             {/* Price Box */}
@@ -121,10 +150,10 @@ export default function CarDetailClient() {
               <p className="text-3xl font-bold text-[#0B1F3A] mb-4">${dummyCar.price.toLocaleString()}</p>
               <div className="flex flex-col gap-3">
                 <a href={`tel:${dummyCar.agent.phone}`} className="btn-primary w-full text-center">📞 Contact Agent</a>
-                <a 
-                  href={`https://wa.me/250788909960?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(dummyCar.title)}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={`https://wa.me/250788909960?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(dummyCar.title)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn-secondary w-full text-center"
                 >
                   💬 WhatsApp
@@ -132,7 +161,7 @@ export default function CarDetailClient() {
                 <button className="border border-[#C9A84C] text-[#C9A84C] rounded-lg py-3 px-4 hover:bg-[#C9A84C] hover:text-white transition-colors">♡ Save Car</button>
               </div>
             </div>
-            
+
             {/* Agent Info */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Agent Info</h3>
@@ -149,37 +178,37 @@ export default function CarDetailClient() {
                 <p className="flex items-center gap-2">✉️ {dummyCar.agent.email}</p>
               </div>
             </div>
-            
+
             {/* Inquiry Form */}
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Send Inquiry</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input 
-                  type="text" 
-                  placeholder="Your Name" 
+                <input
+                  type="text"
+                  placeholder="Your Name"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
-                <input 
-                  type="email" 
-                  placeholder="Your Email" 
+                <input
+                  type="email"
+                  placeholder="Your Email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
-                <input 
-                  type="tel" 
-                  placeholder="Your Phone" 
+                <input
+                  type="tel"
+                  placeholder="Your Phone"
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
-                <textarea 
-                  placeholder="Your Message" 
+                <textarea
+                  placeholder="Your Message"
                   rows={4}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -190,21 +219,20 @@ export default function CarDetailClient() {
             </div>
           </div>
         </div>
-        
+
         {/* Similar Cars */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold text-[#0B1F3A] mb-6">Similar Cars</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {similarCars.map(car => (
-              <Link 
-                key={car.id} 
+              <Link
+                key={car.id}
                 href={`/cars/${car.id}`}
                 className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow flex"
               >
-                <div 
-                  className="w-1/2 h-48 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${car.image})` }}
-                />
+                <div className="w-1/2 h-48 bg-[#0B1F3A] flex items-center justify-center text-4xl text-[#C9A84C]">
+                  🚗
+                </div>
                 <div className="p-6 flex-1">
                   <div className="flex gap-2 mb-3">
                     <span className="badge-category">{car.brand}</span>

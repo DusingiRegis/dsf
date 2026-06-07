@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import PropertyCard from '@/components/public/PropertyCard';
+import Image from 'next/image';
 
 interface Property {
   id: string;
@@ -34,7 +35,30 @@ export default function PropertyDetailPage() {
   const [similarProperties, setSimilarProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+
+  const isSafeImage = (src: string) => {
+    try {
+      if (!src) return false;
+      const url = new URL(src);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  const parseImages = (imagesStr: string) => {
+    try {
+      const parsed = JSON.parse(imagesStr);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((img: any) => typeof img === 'string' && img.trim() !== '');
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  };
 
   // Fetch property details
   const fetchProperty = async () => {
@@ -42,27 +66,17 @@ export default function PropertyDetailPage() {
     setLoading(true);
     try {
       const response = await fetch(`/api/properties/${id}`);
-      
+
       if (!response.ok) {
         setLoading(false);
         return;
       }
-      
+
       const data = await response.json();
-      
+
       // Parse images
-      let images: string[] = [];
-      if (data.images) {
-        try {
-          images = data.images;
-          if (images.length === 0) {
-            images = [];
-          }
-        } catch (e) {
-          images = [];
-        }
-      }
-      
+      let images: string[] = parseImages(data.images);
+
       // Determine category
       let category = 'Property';
       const listingType = data.listingType || 'sale';
@@ -76,7 +90,7 @@ export default function PropertyDetailPage() {
         if (data.type === 'apartment') category = 'Apartments for Rent';
         if (data.type === 'commercial') category = 'Commercial Rentals';
       }
-      
+
       const formattedProperty: Property = {
         id: data.id,
         title: data.title,
@@ -85,6 +99,7 @@ export default function PropertyDetailPage() {
         listingType: listingType as 'rent' | 'sale',
         category,
         price: data.price,
+        currency: data.currency,
         location: data.location,
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
@@ -99,9 +114,9 @@ export default function PropertyDetailPage() {
         },
         addedDate: data.createdAt ? new Date(data.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
       };
-      
+
       setProperty(formattedProperty);
-      
+
       // Fetch similar properties
       const similarResponse = await fetch('/api/properties');
       const similarData = await similarResponse.json();
@@ -139,6 +154,7 @@ export default function PropertyDetailPage() {
             listingType: simListingType,
             category: simCategory,
             price: p.price,
+            currency: p.currency,
             location: p.location,
             bedrooms: p.bedrooms,
             bathrooms: p.bathrooms,
@@ -149,7 +165,7 @@ export default function PropertyDetailPage() {
           };
         });
       setSimilarProperties(similar);
-      
+
     } catch (error) {
       console.error('Error fetching property:', error);
     } finally {
@@ -212,6 +228,8 @@ export default function PropertyDetailPage() {
     );
   }
 
+  const safeImages = property.images.filter(img => isSafeImage(img));
+
   return (
     <main className="py-12 bg-[#F5F5F5]">
       <div className="container mx-auto px-4">
@@ -220,30 +238,46 @@ export default function PropertyDetailPage() {
           <div className="lg:w-2/3">
             {/* Image Gallery */}
             <div className="mb-8">
-              <div 
-                className="h-96 bg-[#0B1F3A] rounded-xl mb-4 flex items-center justify-center" 
-                style={
-                  property.images.length > 0 
-                    ? { backgroundImage: `url(${property.images[selectedImage]})` } 
-                    : {}
-                }
-              >
-                {property.images.length === 0 && <span className="text-[#C9A84C] text-4xl">🏠</span>}
+              <div className="h-96 bg-[#0B1F3A] rounded-xl mb-4 relative flex items-center justify-center overflow-hidden">
+                {safeImages.length > 0 && !imageErrors[selectedImage] ? (
+                  <Image
+                    src={safeImages[selectedImage]}
+                    alt={property.title}
+                    fill
+                    className="object-cover"
+                    onError={() => setImageErrors(prev => ({ ...prev, [selectedImage]: true }))}
+                    unoptimized={!safeImages[selectedImage].startsWith('/')}
+                  />
+                ) : (
+                  <span className="text-[#C9A84C] text-4xl z-10">🏠</span>
+                )}
               </div>
-              {property.images.length > 0 && (
+              {safeImages.length > 0 && (
                 <div className="grid grid-cols-4 gap-2">
-                  {property.images.map((img, idx) => (
-                    <div 
+                  {safeImages.map((img, idx) => (
+                    <div
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
-                      className={`h-24 bg-cover bg-center rounded-lg cursor-pointer ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
-                      style={{ backgroundImage: `url(${img})` }}
-                    />
+                      className={`h-24 rounded-lg cursor-pointer overflow-hidden relative bg-[#0B1F3A] ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
+                    >
+                      {!imageErrors[idx] ? (
+                        <Image
+                          src={img}
+                          alt={`Property image ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          onError={() => setImageErrors(prev => ({ ...prev, [idx]: true }))}
+                          unoptimized={!img.startsWith('/')}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#C9A84C] text-2xl">🏠</div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
             </div>
-            
+
             {/* Title and Basic Info */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <div className="flex gap-2 mb-3">
@@ -260,13 +294,13 @@ export default function PropertyDetailPage() {
                 {property.size && <span>📐 {property.size} sqm</span>}
               </div>
             </div>
-            
+
             {/* Description */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <h2 className="text-xl font-semibold text-[#0B1F3A] mb-4">Description</h2>
               <p className="text-[#6B7280]">{property.description}</p>
             </div>
-            
+
             {/* Features */}
             {property.features && property.features.length > 0 && (
               <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -282,7 +316,7 @@ export default function PropertyDetailPage() {
               </div>
             )}
           </div>
-          
+
           {/* Right Column - Sidebar */}
           <div className="lg:w-1/3">
             {/* Price Box */}
@@ -290,8 +324,8 @@ export default function PropertyDetailPage() {
               <p className="text-3xl font-bold text-[#0B1F3A] mb-4">
                 {property.price != null ? (
                   <>
-                    {property.currency === 'FRW' 
-                      ? `${property.price.toLocaleString()} FRW` 
+                    {property.currency === 'FRW'
+                      ? `${property.price.toLocaleString()} FRW`
                       : `$${property.price.toLocaleString()}`
                     }
                     {property.listingType === 'rent' && <span className="text-xl font-normal">/month</span>}
@@ -302,10 +336,10 @@ export default function PropertyDetailPage() {
               </p>
               <div className="flex flex-col gap-3">
                 <a href={`tel:${property.agent.phone}`} className="btn-primary w-full text-center">📞 Contact Agent</a>
-                <a 
-                  href={`https://wa.me/250788909960?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={`https://wa.me/250788909960?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn-secondary w-full text-center"
                 >
                   💬 WhatsApp
@@ -313,7 +347,7 @@ export default function PropertyDetailPage() {
                 <button className="border border-[#C9A84C] text-[#C9A84C] rounded-lg py-3 px-4 hover:bg-[#C9A84C] hover:text-white transition-colors">♡ Save Property</button>
               </div>
             </div>
-            
+
             {/* Agent Info */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Agent Info</h3>
@@ -330,37 +364,37 @@ export default function PropertyDetailPage() {
                 <p className="flex items-center gap-2">✉️ {property.agent.email}</p>
               </div>
             </div>
-            
+
             {/* Inquiry Form */}
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Send Inquiry</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input 
-                  type="text" 
-                  placeholder="Your Name" 
+                <input
+                  type="text"
+                  placeholder="Your Name"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
-                <input 
-                  type="email" 
-                  placeholder="Your Email" 
+                <input
+                  type="email"
+                  placeholder="Your Email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
-                <input 
-                  type="tel" 
-                  placeholder="Your Phone" 
+                <input
+                  type="tel"
+                  placeholder="Your Phone"
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
-                <textarea 
-                  placeholder="Your Message" 
+                <textarea
+                  placeholder="Your Message"
                   rows={4}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -371,7 +405,7 @@ export default function PropertyDetailPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Similar Properties */}
         {similarProperties.length > 0 && (
           <div className="mt-12">

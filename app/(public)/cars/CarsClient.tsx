@@ -6,15 +6,15 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/public/Sidebar';
 
 const dummyCars = [
-  { id: "1", title: "2023 Toyota Land Cruiser", brand: "Toyota", model: "Land Cruiser", year: 2023, price: 85000, mileage: 12000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20land%20cruiser%20white%20car&image_size=landscape_16_9" },
-  { id: "2", title: "2022 Mercedes-Benz C-Class", brand: "Mercedes", model: "C-Class", year: 2022, price: 65000, mileage: 25000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=mercedes%20benz%20c%20class%20black%20car&image_size=landscape_16_9" },
-  { id: "3", title: "2021 BMW X5", brand: "BMW", model: "X5", year: 2021, price: 58000, mileage: 35000, fuelType: "Diesel", transmission: "Automatic", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=bmw%20x5%20suv%20car&image_size=landscape_16_9" },
-  { id: "4", title: "2024 Honda CR-V", brand: "Honda", model: "CR-V", year: 2024, price: 45000, mileage: 5000, fuelType: "Hybrid", transmission: "Automatic", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=honda%20crv%20suv%20car&image_size=landscape_16_9" },
-  { id: "5", title: "2020 Ford Ranger", brand: "Ford", model: "Ranger", year: 2020, price: 35000, mileage: 60000, fuelType: "Diesel", transmission: "Manual", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=ford%20ranger%20pickup%20car&image_size=landscape_16_9" },
-  { id: "6", title: "2023 Hyundai Tucson", brand: "Hyundai", model: "Tucson", year: 2023, price: 40000, mileage: 18000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=hyundai%20tucson%20suv%20car&image_size=landscape_16_9" },
-  { id: "7", title: "2022 Toyota Corolla (Rent)", brand: "Toyota", model: "Corolla", year: 2022, price: 500, mileage: 20000, fuelType: "Petrol", transmission: "Automatic", status: "rent" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=toyota%20corolla%20silver%20car&image_size=landscape_16_9" },
-  { id: "8", title: "2021 Honda Civic (Rent)", brand: "Honda", model: "Civic", year: 2021, price: 450, mileage: 30000, fuelType: "Petrol", transmission: "CVT", status: "rent" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=honda%20civic%20blue%20car&image_size=landscape_16_9" },
-  { id: "9", title: "2023 Kia Sportage (Rent)", brand: "Kia", model: "Sportage", year: 2023, price: 600, mileage: 10000, fuelType: "Hybrid", transmission: "Automatic", status: "rent" as const, image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=kia%20sportage%20red%20suv%20car&image_size=landscape_16_9" },
+  { id: "1", title: "2023 Toyota Land Cruiser", brand: "Toyota", model: "Land Cruiser", year: 2023, price: 85000, mileage: 12000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "" },
+  { id: "2", title: "2022 Mercedes-Benz C-Class", brand: "Mercedes", model: "C-Class", year: 2022, price: 65000, mileage: 25000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "" },
+  { id: "3", title: "2021 BMW X5", brand: "BMW", model: "X5", year: 2021, price: 58000, mileage: 35000, fuelType: "Diesel", transmission: "Automatic", status: "sale" as const, image: "" },
+  { id: "4", title: "2024 Honda CR-V", brand: "Honda", model: "CR-V", year: 2024, price: 45000, mileage: 5000, fuelType: "Hybrid", transmission: "Automatic", status: "sale" as const, image: "" },
+  { id: "5", title: "2020 Ford Ranger", brand: "Ford", model: "Ranger", year: 2020, price: 35000, mileage: 60000, fuelType: "Diesel", transmission: "Manual", status: "sale" as const, image: "" },
+  { id: "6", title: "2023 Hyundai Tucson", brand: "Hyundai", model: "Tucson", year: 2023, price: 40000, mileage: 18000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "" },
+  { id: "7", title: "2022 Toyota Corolla (Rent)", brand: "Toyota", model: "Corolla", year: 2022, price: 500, mileage: 20000, fuelType: "Petrol", transmission: "Automatic", status: "rent" as const, image: "" },
+  { id: "8", title: "2021 Honda Civic (Rent)", brand: "Honda", model: "Civic", year: 2021, price: 450, mileage: 30000, fuelType: "Petrol", transmission: "CVT", status: "rent" as const, image: "" },
+  { id: "9", title: "2023 Kia Sportage (Rent)", brand: "Kia", model: "Sportage", year: 2023, price: 600, mileage: 10000, fuelType: "Hybrid", transmission: "Automatic", status: "rent" as const, image: "" },
 ];
 
 const CARS_PER_PAGE = 10;
@@ -161,15 +161,14 @@ export default function CarsClient() {
             {/* Cars Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {currentCars.map(car => (
-                <Link 
-                  key={car.id} 
+                <Link
+                  key={car.id}
                   href={`/cars/${car.id}`}
                   className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col"
                 >
-                  <div 
-                    className="w-full h-64 bg-cover bg-center flex-shrink-0"
-                    style={{ backgroundImage: `url(${car.image})` }}
-                  />
+                  <div className="w-full h-64 bg-[#0B1F3A] flex items-center justify-center flex-shrink-0 text-4xl text-[#C9A84C]">
+                    🚗
+                  </div>
                   <div className="p-6 flex flex-col flex-1">
                     <div className="flex gap-2 mb-3">
                       <span className="badge-category">{car.brand}</span>
