@@ -17,8 +17,12 @@ export async function GET(
       );
     }
 
-    const propertyWithImages = {
+    const propertyForEdit = {
       ...property,
+      // Map listingType to "listing" for form
+      listing: property.listingType === "rent" ? "For Rent" : "For Sale",
+      // Map status to "in_talks" if pending
+      status: property.status === "pending" ? "in_talks" : property.status,
       images: (() => {
         try {
           return JSON.parse(property.images || "[]");
@@ -28,7 +32,7 @@ export async function GET(
       })(),
     };
 
-    return NextResponse.json(propertyWithImages);
+    return NextResponse.json(propertyForEdit);
   } catch (error) {
     console.error("Error fetching property:", error);
     return NextResponse.json(
@@ -44,9 +48,26 @@ export async function PUT(
 ) {
   try {
     const body = await req.json();
+    
+    // Map form fields to database fields
+    const data: any = {
+      ...body,
+    };
+    
+    // Handle listing -> listingType
+    if (body.listing) {
+      data.listingType = body.listing === "For Rent" ? "rent" : "sale";
+      delete data.listing;
+    }
+    
+    // Handle status values (in_talks vs pending)
+    if (body.status === "in_talks") {
+      data.status = "pending";
+    }
+    
     const updated = await prisma.property.update({
       where: { id: params.id },
-      data: body,
+      data,
     });
     return NextResponse.json(updated);
   } catch (error) {
