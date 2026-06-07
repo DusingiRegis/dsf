@@ -60,3 +60,30 @@ model User {
   isSuperAdmin  Boolean  @default(false)
   createdAt     DateTime @default(now())
 }
+
+// ─────────────────────────────────────────
+// PROPERTY SUBMISSIONS TABLE (Client-facing)
+// ─────────────────────────────────────────
+model PropertySubmission {
+  id                String   @id @default(cuid())
+  ownerName         String
+  phoneNumber       String
+  email             String
+  propertyType      String   // "house" | "apartment" | "plot" | "commercial"
+  status            String   // "forSale" | "forRent"
+  location          String
+  askingPrice       Float
+  description       String
+  preferredContact  String   // "phone" | "email"
+  isReviewed        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+}
+
+// ─────────────────────────────────────────
+// NEWSLETTER SUBSCRIBERS TABLE
+// ─────────────────────────────────────────
+model NewsletterSubscriber {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  subscribedAt     DateTime @default(now())
+}

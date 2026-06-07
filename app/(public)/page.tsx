@@ -151,11 +151,11 @@ export default function HomePage() {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 text-center text-white">
             <div>
-              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">0+</h3>
+              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">10+</h3>
               <p>Properties</p>
             </div>
             <div>
-              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">0+</h3>
+              <h3 className="text-4xl font-bold text-[#C9A84C] mb-2">5+</h3>
               <p>Happy Clients</p>
             </div>
             <div>
@@ -179,9 +179,9 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { name: "John Doe", location: "Kigali", rating: 5, text: "Excellent service! Found my dream home in just 2 weeks." },
-              { name: "Jane Smith", location: "Kiyovu", rating: 5, text: "Professional team and great selection of properties." },
-              { name: "Robert Johnson", location: "Nyarutarama", rating: 5, text: "Smooth transaction from start to finish. Highly recommended!" },
+              { name: "Uwimana Alice", location: "Kigali", rating: 5, text: "I found my dream apartment through D.E.F Real Estate in less than a week. Very professional!" },
+              { name: "Nkurunziza Patrick", location: "Nyarutarama", rating: 5, text: "Great team, smooth process. I sold my plot faster than expected." },
+              { name: "Mukamana Grace", location: "Kiyovu", rating: 5, text: "Highly recommend! They helped me find a furnished rental that fit my budget perfectly." },
             ].map((testimonial, index) => (
               <div key={index} className="bg-white rounded-xl shadow-md p-8">
                 <div className="flex items-center gap-2 mb-4">
@@ -214,7 +214,7 @@ export default function HomePage() {
           <p className="text-[#0B1F3A]/80 text-lg mb-8 max-w-2xl mx-auto">
             Submit your property and reach thousands of buyers and renters.
           </p>
-          <Link href="/admin/properties/new" className="btn-secondary bg-white text-[#0B1F3A] border-[#0B1F3A] hover:bg-[#0B1F3A] hover:text-white text-lg px-8 py-3">
+          <Link href="/submit-property" className="btn-secondary bg-white text-[#0B1F3A] border-[#0B1F3A] hover:bg-[#0B1F3A] hover:text-white text-lg px-8 py-3">
             Submit Property
           </Link>
         </div>

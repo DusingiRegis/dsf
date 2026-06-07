@@ -1,6 +1,44 @@
+'use client';
 import Link from 'next/link';
+import { useState } from 'react';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubscribe = async () => {
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email');
+      return;
+    }
+    
+    setSubscribing(true);
+    setError('');
+    
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (res.ok) {
+        setSuccess(true);
+        setEmail('');
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Something went wrong');
+      }
+    } catch (err) {
+      setError('Something went wrong');
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
   return (
     <footer className="bg-[#0B1F3A] text-white pt-16 pb-8">
       <div className="container mx-auto px-6">
@@ -67,39 +105,88 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-6 text-lg">Rentals</h4>
             <ul className="space-y-3">
-              {['Furnished Rentals', 'Unfurnished Rentals', 'Rental Apartments', 'Commercial Rentals'].map((link, i) => (
-                <li key={i}>
-                  <Link href="#" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
-                    {link}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link href="/properties?type=furnished&status=rent" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Furnished Rentals
+                </Link>
+              </li>
+              <li>
+                <Link href="/properties?type=unfurnished&status=rent" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Unfurnished Rentals
+                </Link>
+              </li>
+              <li>
+                <Link href="/properties?type=apartment&status=rent" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Rental Apartments
+                </Link>
+              </li>
+              <li>
+                <Link href="/properties?type=commercial&status=rent" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Commercial Rentals
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-6 text-lg">Sales</h4>
             <ul className="space-y-3">
-              {['Houses for Sale', 'Plots / Land Sales', 'Sales Apartments', 'Commercial Sales'].map((link, i) => (
-                <li key={i}>
-                  <Link href="#" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
-                    {link}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link href="/properties?type=house&status=sale" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Houses for Sale
+                </Link>
+              </li>
+              <li>
+                <Link href="/properties?type=plot&status=sale" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Plots / Land Sales
+                </Link>
+              </li>
+              <li>
+                <Link href="/properties?type=apartment&status=sale" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Sales Apartments
+                </Link>
+              </li>
+              <li>
+                <Link href="/properties?type=commercial&status=sale" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Commercial Sales
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-6 text-lg">Useful Links</h4>
             <ul className="space-y-3">
-              {['About Us', 'Contact Us', 'Submit Property', 'Login', 'Privacy Policy', 'Terms & Conditions'].map((link, i) => (
-                <li key={i}>
-                  <Link href="#" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
-                    {link}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link href="/about" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/submit-property" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Submit Property
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin/login" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Login
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy-policy" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-gray-300 hover:text-[#C9A84C] transition-colors flex items-center gap-2">
+                  Terms & Conditions
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -111,12 +198,20 @@ export default function Footer() {
               <input
                 type="email"
                 placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="flex-1 px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent"
               />
-              <button className="bg-[#C9A84C] hover:bg-[#B8973D] text-white px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap">
-                Subscribe
+              <button 
+                onClick={handleSubscribe}
+                disabled={subscribing}
+                className="bg-[#C9A84C] hover:bg-[#B8973D] text-white px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap disabled:opacity-50"
+              >
+                {subscribing ? 'Subscribing...' : success ? 'Subscribed!' : 'Subscribe'}
               </button>
             </div>
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+            {success && <p className="text-green-400 text-sm">Successfully subscribed!</p>}
           </div>
         </div>
 
