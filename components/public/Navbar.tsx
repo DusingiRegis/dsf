@@ -11,8 +11,8 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const navRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Check scroll for navbar styling
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -25,7 +25,6 @@ export default function Navbar() {
     setOpenDropdown(openDropdown === name ? null : name);
   };
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(event.target as Node)) {
@@ -33,14 +32,10 @@ export default function Navbar() {
         setIsMenuOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close on Escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -48,14 +43,10 @@ export default function Navbar() {
         setIsMenuOpen(false);
       }
     };
-
     document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
+    return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
-  // Close dropdowns when path changes
   useEffect(() => {
     setOpenDropdown(null);
     setIsMenuOpen(false);
@@ -79,11 +70,7 @@ export default function Navbar() {
         links: Array<{ name: string; href: string }>;
       }
   > = [
-    {
-      name: 'Home',
-      href: '/',
-      isHome: true,
-    },
+    { name: 'Home', href: '/', isHome: true },
     {
       name: 'About',
       dropdownName: 'about',
@@ -127,10 +114,7 @@ export default function Navbar() {
   ];
 
   const checkActiveLink = (href: string) => {
-    if (href === '/') {
-      return pathname === href;
-    }
-    
+    if (href === '/') return pathname === href;
     const [basePath] = href.split('?');
     return pathname.startsWith(basePath ?? href);
   };
@@ -162,7 +146,6 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => {
               if ('isHome' in item) {
-                // Render Home link
                 const href = item.href as string;
                 const isActive = checkActiveLink(href);
                 return (
@@ -179,15 +162,20 @@ export default function Navbar() {
                   </Link>
                 );
               }
-              
+
               const allLinks = item.links;
               const isAnyLinkActive = allLinks.some((link) => checkActiveLink(link.href));
               return (
                 <div
                   key={item.dropdownName}
                   className="relative"
-                  onMouseEnter={() => setOpenDropdown(item.dropdownName)}
-                  onMouseLeave={() => setOpenDropdown(null)}
+                  onMouseEnter={() => {
+                    if (closeTimer.current) clearTimeout(closeTimer.current);
+                    setOpenDropdown(item.dropdownName);
+                  }}
+                  onMouseLeave={() => {
+                    closeTimer.current = setTimeout(() => setOpenDropdown(null), 100);
+                  }}
                 >
                   <button
                     onClick={() => toggleDropdown(item.dropdownName)}
@@ -258,7 +246,6 @@ export default function Navbar() {
             <div className="flex flex-col gap-2">
               {navItems.map((item) => {
                 if ('isHome' in item) {
-                  // Render Home link
                   const href = item.href as string;
                   const isActive = checkActiveLink(href);
                   return (
@@ -276,7 +263,7 @@ export default function Navbar() {
                     </Link>
                   );
                 }
-              
+
                 return (
                   <div key={item.mobileDropdownName}>
                     <button
