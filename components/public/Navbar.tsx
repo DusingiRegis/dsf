@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const navRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -50,7 +51,7 @@ export default function Navbar() {
   useEffect(() => {
     setOpenDropdown(null);
     setIsMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   const navItems: Array<
     | {
@@ -115,8 +116,18 @@ export default function Navbar() {
 
   const checkActiveLink = (href: string) => {
     if (href === '/') return pathname === href;
-    const [basePath] = href.split('?');
-    return pathname.startsWith(basePath ?? href);
+
+    const [basePath, query] = href.split('?');
+    if (!query) return pathname.startsWith(basePath ?? href);
+
+    const hrefParams = new URLSearchParams(query);
+    const hrefStatus = hrefParams.get('status');
+    const currentStatus = searchParams.get('status');
+
+    const pathMatches = pathname.startsWith(basePath ?? href);
+    const statusMatches = !hrefStatus || hrefStatus === currentStatus;
+
+    return pathMatches && statusMatches;
   };
 
   return (
