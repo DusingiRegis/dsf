@@ -47,7 +47,9 @@ export async function POST(req: Request) {
         price: Number(body.price),
         currency: body.currency || 'USD',
         location: body.location,
-        size: Number(body.size),
+        neighborhood: body.neighborhood || null,
+        contactPhone: body.contactPhone || null,
+        size: body.size ? Number(body.size) : null,
         bedrooms: body.bedrooms ? Number(body.bedrooms) : null,
         bathrooms: body.bathrooms ? Number(body.bathrooms) : null,
         description: body.description,
@@ -55,6 +57,32 @@ export async function POST(req: Request) {
         videos: body.videos || JSON.stringify([]),
         status: body.status || 'available',
         featured: Boolean(body.featured),
+        acceptInquiries: body.acceptInquiries !== false,
+        
+        // Rental specific
+        furnished: Boolean(body.furnished),
+        pricePeriod: body.pricePeriod || null,
+        
+        // Sales specific
+        titleDeed: body.titleDeed || null,
+        titleDeedType: body.titleDeedType || null,
+        
+        // Plot specific
+        plotSize: body.plotSize ? Number(body.plotSize) : null,
+        zoning: body.zoning || null,
+        roadAccess: body.roadAccess || null,
+        
+        // Car specific
+        make: body.make || null,
+        model: body.model || null,
+        year: body.year ? Number(body.year) : null,
+        mileage: body.mileage ? Number(body.mileage) : null,
+        fuelType: body.fuelType || null,
+        transmission: body.transmission || null,
+        color: body.color || null,
+        
+        // Features
+        features: body.features || null,
       },
     });
 
