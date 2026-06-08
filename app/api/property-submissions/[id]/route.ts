@@ -20,3 +20,21 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     );
   }
 }
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const id = params.id;
+
+    await prisma.propertySubmission.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Submission deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting property submission:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete submission' },
+      { status: 500 }
+    );
+  }
+}

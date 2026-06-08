@@ -58,6 +58,26 @@ export default function ClientPropertySubmissions() {
     }
   };
 
+  const deleteSubmission = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this submission?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/property-submissions/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setSubmissions(prev => prev.filter(s => s.id !== id));
+        setMessage({ text: 'Submission deleted successfully!', type: 'success' });
+      }
+    } catch (error) {
+      console.error('Error deleting submission:', error);
+      setMessage({ text: 'Failed to delete submission', type: 'error' });
+    }
+  };
+
   useEffect(() => {
     fetchSubmissions();
   }, []);
@@ -147,6 +167,15 @@ export default function ClientPropertySubmissions() {
                         Mark as Reviewed
                       </button>
                     )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSubmission(submission.id);
+                      }}
+                      className="px-3 py-1 bg-red-500 text-white rounded-md text-sm font-medium hover:bg-red-600 transition-colors"
+                    >
+                      Delete
+                    </button>
                     <span className="text-sm text-slate-500">
                       {new Date(submission.createdAt).toLocaleDateString()}
                     </span>
