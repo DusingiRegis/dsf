@@ -39,6 +39,24 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    
+    // Basic validation
+    if (!body.title) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+    if (!body.type) {
+      return NextResponse.json({ error: 'Property type is required' }, { status: 400 });
+    }
+    if (!body.price) {
+      return NextResponse.json({ error: 'Price is required' }, { status: 400 });
+    }
+    if (!body.location) {
+      return NextResponse.json({ error: 'Location is required' }, { status: 400 });
+    }
+    if (!body.description) {
+      return NextResponse.json({ error: 'Description is required' }, { status: 400 });
+    }
+
     const newProperty = await prisma.property.create({
       data: {
         title: body.title,
@@ -87,8 +105,17 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(newProperty, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating property:', error);
-    return NextResponse.json({ error: 'Failed to create property' }, { status: 500 });
+    let errorMessage = 'Failed to create property';
+    
+    // Check for Prisma-specific errors
+    if (error.code === 'P2002') {
+      errorMessage = 'Unique constraint failed';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

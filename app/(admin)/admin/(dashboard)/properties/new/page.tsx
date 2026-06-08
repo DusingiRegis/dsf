@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Define categories with their configurations
 const CATEGORIES = {
@@ -46,6 +46,10 @@ export default function AddPropertyPage() {
   const [uploadingVideos, setUploadingVideos] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [toast, setToast] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -93,6 +97,16 @@ export default function AddPropertyPage() {
   const [newImageUrl, setNewImageUrl] = useState('');
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [newVideoUrl, setNewVideoUrl] = useState('');
+
+  // Auto dismiss toast after 4 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   const handleCategorySelect = (category: any) => {
     setSelectedCategory(category);
@@ -151,7 +165,10 @@ export default function AddPropertyPage() {
       setImageUrls(updated);
       setFormData(prev => ({ ...prev, images: JSON.stringify(updated) }));
     } catch (error) {
-      alert(`Failed to upload images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setToast({
+        type: 'error',
+        message: `Failed to upload images: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
     } finally {
       setUploadingImages(false);
     }
@@ -181,7 +198,10 @@ export default function AddPropertyPage() {
       setVideoUrls(updated);
       setFormData(prev => ({ ...prev, videos: JSON.stringify(updated) }));
     } catch (error) {
-      alert(`Failed to upload videos: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setToast({
+        type: 'error',
+        message: `Failed to upload videos: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
     } finally {
       setUploadingVideos(false);
     }
@@ -208,15 +228,32 @@ export default function AddPropertyPage() {
         ...formData,
         features: JSON.stringify(selectedFeatures),
       };
-      await fetch('/api/properties', {
+      const response = await fetch('/api/properties', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
       });
-      alert('Property added successfully!');
-      router.push('/admin/properties');
+      if (response.ok) {
+        setToast({
+          type: 'success',
+          message: 'Property added successfully!'
+        });
+        setTimeout(() => {
+          router.push('/admin/properties');
+        }, 1500);
+      } else {
+        const data = await response.json();
+        setToast({
+          type: 'error',
+          message: data.error || 'Failed to add property'
+        });
+      }
     } catch (error) {
       console.error('Error adding property:', error);
+      setToast({
+        type: 'error',
+        message: 'Something went wrong, please try again'
+      });
     }
   };
 
@@ -229,17 +266,38 @@ export default function AddPropertyPage() {
     }`;
 
   return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A]">Add New Property</h1>
-        <button
-          onClick={() => router.back()}
-          className="text-sm text-slate-500 border border-slate-300 rounded-lg px-4 py-2 hover:bg-slate-100 transition-colors w-full md:w-auto"
+    <>
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl text-white transform transition-all duration-300 ${
+            toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+          } ${toast ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
         >
-          Cancel
-        </button>
-      </div>
+          <span className="text-2xl flex-shrink-0">
+            {toast.type === 'success' ? '✓' : '✕'}
+          </span>
+          <p className="text-sm font-medium flex-1">{toast.message}</p>
+          <button
+            onClick={() => setToast(null)}
+            className="text-white hover:opacity-70 transition-opacity text-xl leading-none"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <div className="p-4 md:p-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A]">Add New Property</h1>
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-slate-500 border border-slate-300 rounded-lg px-4 py-2 hover:bg-slate-100 transition-colors w-full md:w-auto"
+          >
+            Cancel
+          </button>
+        </div>
 
       {/* Card */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden max-w-4xl">
