@@ -20,9 +20,64 @@ export async function POST(request: Request) {
       preferredContact 
     } = data;
 
-    if (!ownerName || !phoneNumber || !email || !propertyType || !listingStatus || !location || !askingPrice || !currency || !description || !preferredContact) {
+    // Validate required fields with more descriptive messages
+    if (!ownerName?.trim()) {
       return NextResponse.json(
-        { error: 'All required fields are required' }, 
+        { error: 'Full name is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!phoneNumber?.trim()) {
+      return NextResponse.json(
+        { error: 'Phone number is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!email?.trim()) {
+      return NextResponse.json(
+        { error: 'Email address is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!propertyType) {
+      return NextResponse.json(
+        { error: 'Property type is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!listingStatus) {
+      return NextResponse.json(
+        { error: 'Listing status is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!location?.trim()) {
+      return NextResponse.json(
+        { error: 'Location is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!askingPrice || isNaN(parseFloat(askingPrice)) || parseFloat(askingPrice) <= 0) {
+      return NextResponse.json(
+        { error: 'Valid asking price is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!currency) {
+      return NextResponse.json(
+        { error: 'Currency is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!description?.trim()) {
+      return NextResponse.json(
+        { error: 'Property description is required' }, 
+        { status: 400 }
+      );
+    }
+    if (!preferredContact) {
+      return NextResponse.json(
+        { error: 'Preferred contact method is required' }, 
         { status: 400 }
       );
     }
@@ -46,11 +101,33 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, submission }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating property submission:', error);
+    let errorMessage = 'Failed to submit property';
+    
+    // Check for Prisma-specific errors
+    if (error.code === 'P2002') {
+      errorMessage = 'Unique constraint failed';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
     return NextResponse.json(
-      { error: 'Failed to submit property' }, 
+      { error: errorMessage }, 
       { status: 500 }
     );
+  }
+}
+
+// Add GET endpoint for admin to view submissions
+export async function GET(request: Request) {
+  try {
+    const submissions = await prisma.propertySubmission.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return NextResponse.json(submissions);
+  } catch (error) {
+    console.error('Error fetching property submissions:', error);
+    return NextResponse.json([], { status: 500 });
   }
 }
