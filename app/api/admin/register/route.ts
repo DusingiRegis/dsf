@@ -20,8 +20,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Only super admins can add new admins' }, { status: 403 });
     }
 
-    const { email, password } = await req.json();
-    console.log('Creating user with email:', email, 'and password:', password);
+    const { email, password, isSuperAdmin = false } = await req.json();
+    console.log('Creating user with email:', email);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -38,7 +38,6 @@ export async function POST(req: Request) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log('Hashed password:', hashedPassword);
 
     // Create new admin user
     const newUser = await prisma.user.create({
@@ -46,10 +45,11 @@ export async function POST(req: Request) {
         email,
         password: hashedPassword,
         role: 'admin',
+        isSuperAdmin: Boolean(isSuperAdmin),
       },
     });
 
-    console.log('Created new admin user:', newUser.id, 'with hash:', newUser.password);
+    console.log('Created new admin user:', newUser.id);
 
     return NextResponse.json(
       { success: true, user: { id: newUser.id, email: newUser.email } },
@@ -85,6 +85,48 @@ export async function GET() {
     console.error('Get admin users error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch admin users' },
+      { status: 500 }
+    );
+  }
+}
+
+// Update admin user
+export async function PUT(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!session.user.isSuperAdmin) {
+      return NextResponse.json({ error: 'Only super admins can update admins' }, { status: 403 });
+    }
+
+    const { id, isSuperAdmin, name } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Don't allow changing your own super admin status
+    if (id === session.user.id && isSuperAdmin === false) {
+      return NextResponse.json({ error: 'You cannot remove your own super admin privileges' }, { status: 400 });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        ...(isSuperAdmin !== undefined && { isSuperAdmin: Boolean(isSuperAdmin) }),
+        ...(name !== undefined && { name }),
+      },
+    });
+
+    return NextResponse.json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error('Update admin user error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update admin user' },
       { status: 500 }
     );
   }

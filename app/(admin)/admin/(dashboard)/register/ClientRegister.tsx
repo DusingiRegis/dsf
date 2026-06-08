@@ -6,6 +6,7 @@ export default function ClientRegister() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -18,7 +19,7 @@ export default function ClientRegister() {
       const res = await fetch('/api/admin/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, isSuperAdmin }),
       });
 
       const data = await res.json();
@@ -30,6 +31,7 @@ export default function ClientRegister() {
       setMessage({ text: 'Admin registered successfully!', type: 'success' });
       setEmail('');
       setPassword('');
+      setIsSuperAdmin(false);
     } catch (error) {
       setMessage({ text: error instanceof Error ? error.message : 'An error occurred', type: 'error' });
     } finally {
@@ -80,6 +82,19 @@ export default function ClientRegister() {
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="superAdmin"
+              checked={isSuperAdmin}
+              onChange={(e) => setIsSuperAdmin(e.target.checked)}
+              className="w-4 h-4 accent-[#C9A84C] cursor-pointer"
+            />
+            <label htmlFor="superAdmin" className="text-sm font-medium text-[#0B1F3A] cursor-pointer">
+              Make this user a Super Admin
+            </label>
           </div>
 
           <button

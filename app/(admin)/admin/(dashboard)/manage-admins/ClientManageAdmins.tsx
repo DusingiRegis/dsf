@@ -32,6 +32,27 @@ export default function ClientManageAdmins() {
     }
   };
 
+  const handleToggleSuperAdmin = async (user: User) => {
+    if (!confirm(`Are you sure you want to ${user.isSuperAdmin ? 'remove' : 'grant'} super admin privileges?`)) return;
+    
+    try {
+      const res = await fetch('/api/admin/register', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id, isSuperAdmin: !user.isSuperAdmin }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update admin');
+      }
+      setMessage({ text: 'Admin updated successfully!', type: 'success' });
+      fetchUsers();
+    } catch (error) {
+      console.error(error);
+      setMessage({ text: error instanceof Error ? error.message : 'Failed to update admin', type: 'error' });
+    }
+  };
+
   const handleDelete = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this admin?')) return;
     
@@ -112,16 +133,24 @@ export default function ClientManageAdmins() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     {user.id === session?.user?.id ? (
                       <span className="text-slate-400">Current User</span>
                     ) : (
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Delete
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleToggleSuperAdmin(user)}
+                          className={`px-3 py-1 rounded text-xs font-medium ${user.isSuperAdmin ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}`}
+                        >
+                          {user.isSuperAdmin ? 'Remove Super' : 'Make Super'}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="px-3 py-1 rounded text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200"
+                        >
+                          Delete
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>

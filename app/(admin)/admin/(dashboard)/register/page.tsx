@@ -10,8 +10,7 @@ export default async function RegisterPage() {
     redirect("/admin/login")
   }
 
-  const role = session.user.role
-  if (role !== "super_admin") {
+  if (!session.user.isSuperAdmin) {
     redirect("/")
   }
 
