@@ -107,12 +107,19 @@ export default function AddPropertyPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+    let processedValue = value;
+    
+    // Allow only numbers for phone fields
+    if (name === 'contactPhone') {
+      processedValue = value.replace(/[^0-9]/g, '');
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]:
-        type === 'number' ? (value ? Number(value) : null) :
+        type === 'number' ? (processedValue ? Number(processedValue) : null) :
         type === 'checkbox' ? (e.target as HTMLInputElement).checked :
-        value,
+        processedValue,
     }));
   };
 

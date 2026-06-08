@@ -25,7 +25,14 @@ export default function SubmitPropertyPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Allow only numbers for phone fields
+    if (name === 'phoneNumber') {
+      const onlyNumbers = value.replace(/[^0-9]/g, '');
+      setFormData({ ...formData, [name]: onlyNumbers });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

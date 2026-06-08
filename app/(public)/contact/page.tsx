@@ -5,6 +5,19 @@ import { useState } from 'react';
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
 
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    // Allow only numbers for phone fields
+    if (name === 'phone') {
+      const onlyNumbers = value.replace(/[^0-9]/g, '');
+      setFormData({ ...formData, [name]: onlyNumbers });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -38,9 +51,10 @@ export default function ContactPage() {
                 <label className="block text-sm font-medium mb-2 text-[#6B7280]">Name</label>
                 <input 
                   type="text" 
+                  name="name"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={handleChange}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
               </div>
@@ -48,9 +62,10 @@ export default function ContactPage() {
                 <label className="block text-sm font-medium mb-2 text-[#6B7280]">Email</label>
                 <input 
                   type="email" 
+                  name="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={handleChange}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
               </div>
@@ -58,9 +73,10 @@ export default function ContactPage() {
                 <label className="block text-sm font-medium mb-2 text-[#6B7280]">Phone</label>
                 <input 
                   type="tel" 
+                  name="phone"
                   required
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={handleChange}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
               </div>
@@ -68,9 +84,10 @@ export default function ContactPage() {
                 <label className="block text-sm font-medium mb-2 text-[#6B7280]">Message</label>
                 <textarea 
                   rows={5} 
+                  name="message"
                   required
                   value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  onChange={handleChange}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C9A84C]"
                 />
               </div>
