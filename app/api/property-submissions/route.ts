@@ -10,16 +10,19 @@ export async function POST(request: Request) {
       phoneNumber, 
       email, 
       propertyType, 
-      status, 
+      listingStatus, 
       location, 
       askingPrice, 
+      currency,
+      bedrooms,
+      bathrooms,
       description, 
       preferredContact 
     } = data;
 
-    if (!ownerName || !phoneNumber || !email || !propertyType || !status || !location || !askingPrice || !description || !preferredContact) {
+    if (!ownerName || !phoneNumber || !email || !propertyType || !listingStatus || !location || !askingPrice || !currency || !description || !preferredContact) {
       return NextResponse.json(
-        { error: 'All fields are required' }, 
+        { error: 'All required fields are required' }, 
         { status: 400 }
       );
     }
@@ -30,11 +33,15 @@ export async function POST(request: Request) {
         phoneNumber,
         email,
         propertyType,
-        status,
+        listingStatus,
         location,
         askingPrice: parseFloat(askingPrice),
+        currency,
+        bedrooms: bedrooms ? parseInt(bedrooms) : null,
+        bathrooms: bathrooms ? parseInt(bathrooms) : null,
         description,
         preferredContact,
+        status: 'pending',
       }
     });
 

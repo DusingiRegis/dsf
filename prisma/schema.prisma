@@ -70,11 +70,15 @@ model PropertySubmission {
   phoneNumber       String
   email             String
   propertyType      String   // "house" | "apartment" | "plot" | "commercial"
-  status            String   // "forSale" | "forRent"
+  listingStatus     String   // "forSale" | "forRent"
   location          String
   askingPrice       Float
+  currency          String   // "RWF" | "USD"
+  bedrooms          Int?
+  bathrooms         Int?
   description       String
-  preferredContact  String   // "phone" | "email"
+  preferredContact  String   // "phone" | "whatsapp" | "email"
+  status            String   @default("pending") // "pending" | "reviewed" | "contacted"
   isReviewed        Boolean  @default(false)
   createdAt         DateTime @default(now())
 }

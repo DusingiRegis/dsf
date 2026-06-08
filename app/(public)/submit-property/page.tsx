@@ -9,9 +9,12 @@ export default function SubmitPropertyPage() {
     phoneNumber: '',
     email: '',
     propertyType: 'house',
-    status: 'forSale',
+    listingStatus: 'forSale',
     location: '',
     askingPrice: '',
+    currency: 'RWF',
+    bedrooms: '',
+    bathrooms: '',
     description: '',
     preferredContact: 'phone',
   });
@@ -34,10 +37,7 @@ export default function SubmitPropertyPage() {
       const res = await fetch('/api/property-submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          askingPrice: parseFloat(formData.askingPrice),
-        }),
+        body: JSON.stringify(formData),
       });
       
       if (res.ok) {
@@ -48,9 +48,12 @@ export default function SubmitPropertyPage() {
           phoneNumber: '',
           email: '',
           propertyType: 'house',
-          status: 'forSale',
+          listingStatus: 'forSale',
           location: '',
           askingPrice: '',
+          currency: 'RWF',
+          bedrooms: '',
+          bathrooms: '',
           description: '',
           preferredContact: 'phone',
         });
@@ -76,7 +79,7 @@ export default function SubmitPropertyPage() {
             </div>
             <h1 className="text-3xl font-bold text-[#0B1F3A] mb-4">Thank You!</h1>
             <p className="text-[#6B7280] text-lg mb-8">
-              We have received your property details and will contact you shortly.
+              We have received your property details and our team will contact you shortly.
             </p>
             <Link
               href="/"
@@ -100,10 +103,10 @@ export default function SubmitPropertyPage() {
               ← Back
             </Link>
             <h1 className="text-3xl md:text-4xl font-bold text-[#0B1F3A] mb-4">
-              Submit Your Property
+              List Your Property With Us
             </h1>
             <p className="text-[#6B7280]">
-              Fill out the form below and we'll get back to you shortly
+              Fill in the form below and our team will contact you to discuss the next steps.
             </p>
           </div>
 
@@ -122,7 +125,7 @@ export default function SubmitPropertyPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
-                  Your Name *
+                  Full Name *
                 </label>
                 <input
                   type="text"
@@ -153,7 +156,7 @@ export default function SubmitPropertyPage() {
 
             <div>
               <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
-                Email *
+                Email Address *
               </label>
               <input
                 type="email"
@@ -167,7 +170,7 @@ export default function SubmitPropertyPage() {
             </div>
 
             {/* Property Details */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
                   Property Type *
@@ -188,34 +191,18 @@ export default function SubmitPropertyPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
-                  For *
+                  Status *
                 </label>
                 <select
-                  name="status"
-                  value={formData.status}
+                  name="listingStatus"
+                  value={formData.listingStatus}
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
                 >
-                  <option value="forSale">Sale</option>
-                  <option value="forRent">Rent</option>
+                  <option value="forSale">For Sale</option>
+                  <option value="forRent">For Rent</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
-                  Asking Price *
-                </label>
-                <input
-                  type="number"
-                  name="askingPrice"
-                  value={formData.askingPrice}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-                  placeholder="e.g. 240000000"
-                />
               </div>
             </div>
 
@@ -234,9 +221,78 @@ export default function SubmitPropertyPage() {
               />
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
+                  Asking Price *
+                </label>
+                <input
+                  type="number"
+                  name="askingPrice"
+                  value={formData.askingPrice}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
+                  placeholder="Enter asking price"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
+                  Currency *
+                </label>
+                <select
+                  name="currency"
+                  value={formData.currency}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
+                >
+                  <option value="RWF">RWF</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Bedrooms & Bathrooms - only show if not plot */}
+            {formData.propertyType !== 'plot' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
+                    Number of Bedrooms
+                  </label>
+                  <input
+                    type="number"
+                    name="bedrooms"
+                    value={formData.bedrooms}
+                    onChange={handleChange}
+                    min="0"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
+                    placeholder="e.g. 4"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
+                    Number of Bathrooms
+                  </label>
+                  <input
+                    type="number"
+                    name="bathrooms"
+                    value={formData.bathrooms}
+                    onChange={handleChange}
+                    min="0"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
+                    placeholder="e.g. 2"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
-                Description *
+                Property Description *
               </label>
               <textarea
                 name="description"
@@ -264,6 +320,17 @@ export default function SubmitPropertyPage() {
                     className="w-4 h-4 accent-[#C9A84C]"
                   />
                   <span className="text-[#6B7280]">Phone</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="preferredContact"
+                    value="whatsapp"
+                    checked={formData.preferredContact === 'whatsapp'}
+                    onChange={handleChange}
+                    className="w-4 h-4 accent-[#C9A84C]"
+                  />
+                  <span className="text-[#6B7280]">WhatsApp</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
