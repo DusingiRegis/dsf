@@ -275,10 +275,15 @@ export default function AddPropertyPage() {
               <div className="grid grid-cols-3 gap-4 mt-4">
                 {imageUrls.map((url, idx) => (
                   <div key={idx} className="relative">
-                    <img src={url} alt={`Property ${idx + 1}`} className="w-full h-24 object-cover rounded-lg border border-slate-200" onError={(e) => {
+                    <img src={url} alt={`Property ${idx + 1}`} className="w-full h-24 object-cover rounded-xl border border-slate-200" onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.onerror = null;
-                      target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="%23e5e7eb"/><text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="20" fill="%239ca3af">Image</text></svg>';
+                      target.src = 'data:image/svg+xml,' + encodeURIComponent(`
+                        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+                          <rect width="200" height="200" fill="#f3f4f6"/>
+                          <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#6b7280">Photo</text>
+                        </svg>
+                      `);
                     }} />
                     <button
                       type="button"

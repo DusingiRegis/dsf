@@ -10,6 +10,15 @@ cloudinary.config({
 
 export async function POST(request: Request) {
   try {
+    // Check if Cloudinary is configured
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.error('Cloudinary environment variables are missing!');
+      return NextResponse.json(
+        { error: 'Image storage is not configured properly. Please contact the site administrator.' },
+        { status: 500 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     
@@ -17,42 +26,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Convert file to base64 for Cloudinary (and keep file for fallback)
+    // Convert file to base64 for Cloudinary
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    // Try Cloudinary first
-    try {
-      const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
-      const result = await cloudinary.uploader.upload(base64, {
-        folder: 'real-estate',
-        resource_type: 'auto',
-      });
-      return NextResponse.json({ url: result.secure_url });
-    } catch (cloudinaryError) {
-      console.error('Cloudinary upload failed, falling back to local:', cloudinaryError);
-    }
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(base64, {
+      folder: 'real-estate',
+      resource_type: 'auto',
+    });
 
-    // Fallback to local upload
-    const { writeFile, mkdir } = await import('fs/promises');
-    const { join } = await import('path');
-    const { existsSync } = await import('fs');
-    
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-    
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const fileExtension = file.name.split('.').pop();
-    const filename = `${uniqueSuffix}.${fileExtension}`;
-    const filePath = join(uploadDir, filename);
-    
-    await writeFile(filePath, buffer);
-    
-    return NextResponse.json({ url: `/uploads/${filename}` });
+    return NextResponse.json({ url: result.secure_url });
   } catch (error) {
     console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to upload image. Please try again.' },
+      { status: 500 }
+    );
   }
 }
