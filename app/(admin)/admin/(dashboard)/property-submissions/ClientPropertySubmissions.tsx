@@ -25,6 +25,7 @@ export default function ClientPropertySubmissions() {
   const [submissions, setSubmissions] = useState<PropertySubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const fetchSubmissions = async () => {
     try {
@@ -35,6 +36,25 @@ export default function ClientPropertySubmissions() {
       console.error('Error fetching submissions:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markAsReviewed = async (id: string) => {
+    try {
+      const res = await fetch(`/api/property-submissions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isReviewed: true, status: 'reviewed' }),
+      });
+
+      if (res.ok) {
+        setSubmissions(prev => prev.map(s => 
+          s.id === id ? { ...s, isReviewed: true, status: 'reviewed' } : s
+        ));
+        setMessage({ text: 'Submission marked as reviewed!', type: 'success' });
+      }
+    } catch (error) {
+      console.error('Error marking as reviewed:', error);
     }
   };
 
@@ -66,53 +86,18 @@ export default function ClientPropertySubmissions() {
             <p className="text-slate-500">No property submissions yet.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Owner Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Property Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Submitted
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-200">
-                {submissions.map((submission) => (
-                  <tr key={submission.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                      {submission.ownerName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      <div>{submission.email}</div>
-                      <div>{submission.phoneNumber}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                      {submission.propertyType} ({submission.listingStatus})
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {submission.location}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                      {submission.currency} {submission.askingPrice.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+          <div className="divide-y divide-slate-200">
+            {submissions.map((submission) => (
+              <div key={submission.id} className="border-b border-slate-200">
+                <div 
+                  className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
+                  onClick={() => setExpandedRow(expandedRow === submission.id ? null : submission.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-[#0B1F3A]">
+                        {submission.ownerName}
+                      </h3>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         submission.status === 'pending' 
                           ? 'bg-yellow-100 text-yellow-800' 
@@ -122,14 +107,72 @@ export default function ClientPropertySubmissions() {
                       }`}>
                         {submission.status}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-2">
+                      <span className="flex items-center gap-1">
+                        📧 {submission.email}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        📞 {submission.phoneNumber}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
+                      <span>
+                        <strong>Property:</strong> {submission.propertyType} ({submission.listingStatus})
+                      </span>
+                      <span>
+                        <strong>Location:</strong> {submission.location}
+                      </span>
+                      <span>
+                        <strong>Price:</strong> {submission.currency} {submission.askingPrice.toLocaleString()}
+                      </span>
+                      {submission.bedrooms && (
+                        <span><strong>Bedrooms:</strong> {submission.bedrooms}</span>
+                      )}
+                      {submission.bathrooms && (
+                        <span><strong>Bathrooms:</strong> {submission.bathrooms}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3 md:mt-0">
+                    {!submission.isReviewed && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsReviewed(submission.id);
+                        }}
+                        className="px-3 py-1 bg-[#C9A84C] text-white rounded-md text-sm font-medium hover:bg-[#b8923d] transition-colors"
+                      >
+                        Mark as Reviewed
+                      </button>
+                    )}
+                    <span className="text-sm text-slate-500">
                       {new Date(submission.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                  </div>
+                </div>
+
+                {expandedRow === submission.id && (
+                  <div className="p-4 md:p-6 bg-slate-50 border-t border-slate-200">
+                    <h4 className="font-semibold text-[#0B1F3A] mb-3">Details</h4>
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-slate-600">
+                          <strong>Preferred Contact:</strong> {submission.preferredContact}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600 mb-2 font-medium">Description:</p>
+                      <p className="text-[#6B7280] whitespace-pre-wrap">
+                        {submission.description}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
