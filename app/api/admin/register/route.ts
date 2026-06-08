@@ -103,7 +103,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Only super admins can update admins' }, { status: 403 });
     }
 
-    const { id, isSuperAdmin, name } = await req.json();
+    const { id, isSuperAdmin, name, password } = await req.json();
 
     if (!id) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -114,12 +114,14 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'You cannot remove your own super admin privileges' }, { status: 400 });
     }
 
+    const updateData: any = {};
+    if (isSuperAdmin !== undefined) updateData.isSuperAdmin = Boolean(isSuperAdmin);
+    if (name !== undefined) updateData.name = name;
+    if (password !== undefined) updateData.password = await bcrypt.hash(password, 10);
+
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: {
-        ...(isSuperAdmin !== undefined && { isSuperAdmin: Boolean(isSuperAdmin) }),
-        ...(name !== undefined && { name }),
-      },
+      data: updateData,
     });
 
     return NextResponse.json({ success: true, user: updatedUser });

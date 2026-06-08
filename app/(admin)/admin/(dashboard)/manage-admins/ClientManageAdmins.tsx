@@ -17,6 +17,10 @@ export default function ClientManageAdmins() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -67,6 +71,29 @@ export default function ClientManageAdmins() {
     } catch (error) {
       console.error(error);
       setMessage({ text: error instanceof Error ? error.message : 'Failed to delete admin', type: 'error' });
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser || !newPassword) return;
+
+    try {
+      const res = await fetch('/api/admin/register', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedUser.id, password: newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to reset password');
+      }
+      setMessage({ text: `Password reset successfully for ${selectedUser.email}!`, type: 'success' });
+      setResetModalOpen(false);
+      setSelectedUser(null);
+      setNewPassword('');
+    } catch (error) {
+      console.error(error);
+      setMessage({ text: error instanceof Error ? error.message : 'Failed to reset password', type: 'error' });
     }
   };
 
@@ -139,6 +166,15 @@ export default function ClientManageAdmins() {
                     ) : (
                       <>
                         <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setResetModalOpen(true);
+                          }}
+                          className="px-3 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 hover:bg-purple-200"
+                        >
+                          Reset Password
+                        </button>
+                        <button
                           onClick={() => handleToggleSuperAdmin(user)}
                           className={`px-3 py-1 rounded text-xs font-medium ${user.isSuperAdmin ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}`}
                         >
@@ -159,6 +195,60 @@ export default function ClientManageAdmins() {
           </table>
         </div>
       </div>
+
+      {/* Reset Password Modal */}
+      {resetModalOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold text-[#0B1F3A] mb-4">
+              Reset Password for {selectedUser.email}
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#0B1F3A] mb-2">
+                  New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent outline-none"
+                    required
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setResetModalOpen(false);
+                    setSelectedUser(null);
+                    setNewPassword('');
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResetPassword}
+                  disabled={!newPassword}
+                  className="flex-1 px-4 py-2 rounded-lg bg-[#C9A84C] text-white hover:bg-[#b89744] disabled:opacity-50"
+                >
+                  Reset Password
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
