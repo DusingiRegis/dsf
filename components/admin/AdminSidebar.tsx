@@ -19,6 +19,7 @@ export default function AdminSidebar() {
   const navItems = [
     { name: 'Dashboard', href: '/admin', icon: '📊' },
     { name: 'Properties', href: '/admin/properties', icon: '🏠' },
+    { name: 'Property Submissions', href: '/admin/property-submissions', icon: '📝' },
     { name: 'Inquiries', href: '/admin/inquiries', icon: '📩' },
     { name: 'Activity', href: '/admin/activity', icon: '📈' },
     ...(session?.user?.isSuperAdmin
