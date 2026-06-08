@@ -20,7 +20,7 @@ export default function TopBar() {
         </div>
         <div className="flex-shrink-0">
           <Link 
-            href="/admin/properties/new"
+            href="/submit-property"
             className="bg-[#C9A84C] hover:bg-[#B8973D] text-xs sm:text-sm px-3 py-1 rounded-full whitespace-nowrap font-medium transition-colors"
           >
             Submit Property
