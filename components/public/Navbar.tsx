@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-export default function Navbar() {
+function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -329,5 +329,13 @@ export default function Navbar() {
         )}
       </div>
     </nav>
+  );
+}
+
+export default function NavbarWithSuspense() {
+  return (
+    <Suspense fallback={null}>
+      <Navbar />
+    </Suspense>
   );
 }
