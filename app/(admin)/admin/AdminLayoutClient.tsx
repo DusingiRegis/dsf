@@ -20,9 +20,9 @@ export default function AdminLayoutClient({
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       <AdminSidebar />
-      <main className="flex-1 p-6 bg-gray-100 overflow-auto">
+      <main className="flex-1 p-6 bg-gray-100 overflow-y-auto">
         {children}
       </main>
     </div>
