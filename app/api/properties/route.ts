@@ -4,35 +4,105 @@ import prisma from '@/lib/prisma';
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get('type') || undefined;
-    const status = searchParams.get('status') || undefined;
-    const location = searchParams.get('location') || undefined;
-    const listingType = searchParams.get('listingType') || undefined;
+    const typeParam = searchParams.get('type');
+    const status = searchParams.get('status');
+    const location = searchParams.get('location');
+    const listingType = searchParams.get('listingType');
     const featured = searchParams.get('featured') === 'true';
+    const minPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : null;
+    const maxPrice = searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : null;
+    const bedrooms = searchParams.get('bedrooms') ? Number(searchParams.get('bedrooms')) : null;
+    const bathrooms = searchParams.get('bathrooms') ? Number(searchParams.get('bathrooms')) : null;
+    const features = searchParams.get('features') ? searchParams.get('features')?.split(',') || [] : [];
+    const sort = searchParams.get('sort') || 'newest';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = 10;
     const skip = (page - 1) * limit;
 
     // Build where clause
     const where: any = {};
-    if (type) where.type = type;
-    if (status) where.status = status;
-    if (location) where.location = { contains: location, mode: 'insensitive' };
-    if (listingType) where.listingType = listingType;
-    if (featured) where.featured = true;
+
+    // Handle type filter (including furnished/unfurnished)
+    if (typeParam) {
+      if (typeParam === 'furnished') {
+        where.listingType = 'rent';
+        where.furnished = true;
+      } else if (typeParam === 'unfurnished') {
+        where.listingType = 'rent';
+        where.furnished = false;
+      } else {
+        where.type = typeParam;
+      }
+    }
+
+    // Handle status filter
+    if (status) {
+      where.status = status;
+    }
+
+    // Handle listingType filter
+    if (listingType) {
+      where.listingType = listingType;
+    }
+
+    // Handle featured filter
+    if (featured) {
+      where.featured = true;
+    }
+
+    // Handle location filter
+    if (location) {
+      where.location = { contains: location, mode: 'insensitive' };
+    }
+
+    // Handle price filters
+    if (minPrice !== null || maxPrice !== null) {
+      where.price = {};
+      if (minPrice !== null) where.price.gte = minPrice;
+      if (maxPrice !== null) where.price.lte = maxPrice;
+    }
+
+    // Handle bedrooms filter
+    if (bedrooms !== null) {
+      where.bedrooms = { gte: bedrooms };
+    }
+
+    // Handle bathrooms filter
+    if (bathrooms !== null) {
+      where.bathrooms = { gte: bathrooms };
+    }
+
+    // Handle sort
+    let orderBy: any = { createdAt: 'desc' };
+    if (sort === 'price-low') {
+      orderBy = { price: 'asc' };
+    } else if (sort === 'price-high') {
+      orderBy = { price: 'desc' };
+    }
 
     // Fetch from Prisma
-    const properties = await prisma.property.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limit,
-    });
+    const [properties, totalCount] = await Promise.all([
+      prisma.property.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.property.count({ where }),
+    ]);
 
-    return NextResponse.json(properties);
+    return NextResponse.json({
+      properties,
+      totalCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (error) {
     console.error('Error fetching properties:', error);
-    return NextResponse.json([], { status: 500 });
+    return NextResponse.json(
+      { properties: [], totalCount: 0, page: 1, totalPages: 0 },
+      { status: 500 }
+    );
   }
 }
 

@@ -16,7 +16,7 @@ export default function HomePage() {
       const response = await fetch('/api/properties?featured=true');
       const data = await response.json();
       
-      const formattedProperties = data.map((prop: any) => {
+      const formattedProperties = (data.properties || data).map((prop: any) => {
         let image = "";
         if (prop.images) {
           try {

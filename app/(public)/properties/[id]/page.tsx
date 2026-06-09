@@ -123,7 +123,7 @@ export default function PropertyDetailPage() {
       // Fetch similar properties
       const similarResponse = await fetch('/api/properties');
       const similarData = await similarResponse.json();
-      const similar = similarData
+      const similar = (similarData.properties || similarData)
         .filter((p: any) => p.id !== id)
         .slice(0, 3)
         .map((p: any) => {
