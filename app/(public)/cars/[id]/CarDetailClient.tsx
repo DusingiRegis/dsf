@@ -133,12 +133,38 @@ export default function CarDetailClient() {
   }
 
   // Parse images
-  let images = [] as string[];
-  try {
-    images = JSON.parse(car.images);
-  } catch (e) {
-    images = [];
-  }
+  const parseImages = (imagesStr: any): string[] => {
+    try {
+      // If it's already an array, use it directly
+      if (Array.isArray(imagesStr)) {
+        return imagesStr.filter((img: any) => typeof img === 'string' && img.trim() !== '');
+      }
+
+      // If it's a string, try to parse it
+      if (typeof imagesStr === 'string') {
+        // If the string is empty, return empty array
+        if (imagesStr.trim() === '') {
+          return [];
+        }
+        // Try parsing as JSON
+        try {
+          const parsed = JSON.parse(imagesStr);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((img: any) => typeof img === 'string' && img.trim() !== '');
+          } else if (typeof parsed === 'string') {
+            // If parsed result is a single string, treat as single image
+            return [parsed];
+          }
+        } catch (e) {
+          // If JSON parsing fails, maybe it's a single image URL
+          return [imagesStr];
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing images:', e);
+    }
+    return [];
+  };
 
   // Parse features
   let features = [] as string[];
@@ -151,6 +177,8 @@ export default function CarDetailClient() {
   } catch (e) {
     features = [];
   }
+
+  const images = parseImages(car.images);
 
   const formatCar = {
     id: car.id,

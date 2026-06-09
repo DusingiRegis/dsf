@@ -39,14 +39,35 @@ export default function PropertyDetailPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
 
-  const parseImages = (imagesStr: string) => {
+  const parseImages = (imagesStr: any): string[] => {
     try {
-      const parsed = JSON.parse(imagesStr);
-      if (Array.isArray(parsed)) {
-        return parsed.filter((img: any) => typeof img === 'string' && img.trim() !== '');
+      // If it's already an array, use it directly
+      if (Array.isArray(imagesStr)) {
+        return imagesStr.filter((img: any) => typeof img === 'string' && img.trim() !== '');
       }
-    } catch {
-      // ignore
+
+      // If it's a string, try to parse it
+      if (typeof imagesStr === 'string') {
+        // If the string is empty, return empty array
+        if (imagesStr.trim() === '') {
+          return [];
+        }
+        // Try parsing as JSON
+        try {
+          const parsed = JSON.parse(imagesStr);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((img: any) => typeof img === 'string' && img.trim() !== '');
+          } else if (typeof parsed === 'string') {
+            // If parsed result is a single string, treat as single image
+            return [parsed];
+          }
+        } catch (e) {
+          // If JSON parsing fails, maybe it's a single image URL
+          return [imagesStr];
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing images:', e);
     }
     return [];
   };
@@ -100,15 +121,19 @@ export default function PropertyDetailPage() {
     try {
       const response = await fetch(`/api/properties/${id}`);
 
+      console.log('API response status:', response.status);
+      const data = await response.json();
+      console.log('API data:', data);
+      console.log('API data.images:', data.images);
+
       if (!response.ok) {
         setLoading(false);
         return;
       }
 
-      const data = await response.json();
-
       // Parse images
       let images: string[] = parseImages(data.images);
+      console.log('Parsed images:', images);
 
       // Parse features
       let features: string[] = [];
