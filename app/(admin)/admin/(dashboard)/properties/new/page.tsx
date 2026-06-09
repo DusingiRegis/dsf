@@ -288,16 +288,16 @@ export default function AddPropertyPage() {
       )}
 
       <div className="p-4 md:p-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A]">Add New Property</h1>
-          <button
-            onClick={() => router.back()}
-            className="text-sm text-slate-500 border border-slate-300 rounded-lg px-4 py-2 hover:bg-slate-100 transition-colors w-full md:w-auto"
-          >
-            Cancel
-          </button>
-        </div>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A]">Add New Property</h1>
+        <button
+          onClick={() => router.back()}
+          className="text-sm text-slate-500 border border-slate-300 rounded-lg px-4 py-2 hover:bg-slate-100 transition-colors w-full md:w-auto"
+        >
+          Cancel
+        </button>
+      </div>
 
       {/* Card */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden max-w-4xl">
@@ -712,6 +712,6 @@ export default function AddPropertyPage() {
 
         </form>
       </div>
-    </div>
+    </>
   );
 }
