@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 
 interface Filters {
-  status: 'all' | 'rent' | 'sale' | 'available' | 'sold' | 'pending';
+  listingType: 'all' | 'rent' | 'sale';
+  status: 'all' | 'available' | 'sold' | 'pending';
   type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished' | 'car';
   location: string;
   minPrice: number | null;
@@ -31,13 +32,24 @@ export default function Sidebar({ filters, onFilterChange, useFor = 'properties'
   }, [filters]);
 
   const handleStatusChange = (value: string) => {
-    let status: 'all' | 'available' | 'pending' | 'sold' | 'rent' | 'sale' = 'all';
-    if (value === 'Available') status = 'available';
-    if (value === 'In Talks') status = 'pending';
-    if (value === 'Sold Out') status = 'sold';
-    if (value === 'For Rent') status = 'rent';
-    if (value === 'For Sale') status = 'sale';
-    setTempFilters({ ...tempFilters, status });
+    let listingType: 'all' | 'rent' | 'sale' = 'all';
+    let status: 'all' | 'available' | 'pending' | 'sold' = 'all';
+    
+    if (useFor === 'properties') {
+      if (value === 'Available') status = 'available';
+      if (value === 'In Talks') status = 'pending';
+      if (value === 'Sold Out') status = 'sold';
+    } else {
+      if (value === 'For Rent') listingType = 'rent';
+      if (value === 'For Sale') listingType = 'sale';
+    }
+    
+    // For properties, if we select "For Rent" or "For Sale" (from navbar), update listingType
+    if (useFor === 'properties' && (value === 'For Rent' || value === 'For Sale')) {
+      listingType = value === 'For Rent' ? 'rent' : 'sale';
+    }
+    
+    setTempFilters({ ...tempFilters, listingType, status });
   };
 
   const handleTypeChange = (value: string) => {
@@ -88,10 +100,12 @@ export default function Sidebar({ filters, onFilterChange, useFor = 'properties'
       if (tempFilters.status === 'available') return 'Available';
       if (tempFilters.status === 'pending') return 'In Talks';
       if (tempFilters.status === 'sold') return 'Sold Out';
+      if (tempFilters.listingType === 'rent') return 'For Rent';
+      if (tempFilters.listingType === 'sale') return 'For Sale';
       return 'All';
     }
-    if (tempFilters.status === 'rent') return 'For Rent';
-    if (tempFilters.status === 'sale') return 'For Sale';
+    if (tempFilters.listingType === 'rent') return 'For Rent';
+    if (tempFilters.listingType === 'sale') return 'For Sale';
     return 'All';
   };
 
@@ -129,6 +143,8 @@ export default function Sidebar({ filters, onFilterChange, useFor = 'properties'
               <option>All</option>
               {useFor === 'properties' ? (
                 <>
+                  <option>For Rent</option>
+                  <option>For Sale</option>
                   <option>Available</option>
                   <option>In Talks</option>
                   <option>Sold Out</option>
@@ -191,80 +207,84 @@ export default function Sidebar({ filters, onFilterChange, useFor = 'properties'
             </div>
           </div>
 
-          <div className="mb-6">
-            <label className="block text-[#6B7280] mb-2 font-medium">Bedrooms</label>
-            <div className="flex flex-wrap gap-2">
-              {[1, 2, 3, 4, 5].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => handleBedroomsChange(tempFilters.bedrooms === num ? null : num)}
-                  className={`px-4 py-2 rounded-lg border transition-colors ${
-                    tempFilters.bedrooms === num
-                      ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
-                      : 'border-gray-300 text-[#0B1F3A] hover:border-[#C9A84C] hover:text-[#C9A84C]'
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-              <button 
-                onClick={() => handleBedroomsChange(tempFilters.bedrooms === 6 ? null : 6)}
-                className={`px-4 py-2 rounded-lg border transition-colors ${
-                  tempFilters.bedrooms === 6
-                    ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
-                    : 'border-gray-300 text-[#0B1F3A] hover:border-[#C9A84C] hover:text-[#C9A84C]'
-                }`}
-              >
-                5+
-              </button>
-            </div>
-          </div>
+          {useFor === 'properties' && (
+            <>
+              <div className="mb-6">
+                <label className="block text-[#6B7280] mb-2 font-medium">Bedrooms</label>
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => handleBedroomsChange(tempFilters.bedrooms === num ? null : num)}
+                      className={`px-4 py-2 rounded-lg border transition-colors ${
+                        tempFilters.bedrooms === num
+                          ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
+                          : 'border-gray-300 text-[#0B1F3A] hover:border-[#C9A84C] hover:text-[#C9A84C]'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                  <button 
+                    onClick={() => handleBedroomsChange(tempFilters.bedrooms === 6 ? null : 6)}
+                    className={`px-4 py-2 rounded-lg border transition-colors ${
+                      tempFilters.bedrooms === 6
+                        ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
+                        : 'border-gray-300 text-[#0B1F3A] hover:border-[#C9A84C] hover:text-[#C9A84C]'
+                    }`}
+                  >
+                    5+
+                  </button>
+                </div>
+              </div>
 
-          <div className="mb-6">
-            <label className="block text-[#6B7280] mb-2 font-medium">Bathrooms</label>
-            <div className="flex flex-wrap gap-2">
-              {[1, 2, 3, 4].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => handleBathroomsChange(tempFilters.bathrooms === num ? null : num)}
-                  className={`px-4 py-2 rounded-lg border transition-colors ${
-                    tempFilters.bathrooms === num
-                      ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
-                      : 'border-gray-300 text-[#0B1F3A] hover:border-[#C9A84C] hover:text-[#C9A84C]'
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-              <button 
-                onClick={() => handleBathroomsChange(tempFilters.bathrooms === 5 ? null : 5)}
-                className={`px-4 py-2 rounded-lg border transition-colors ${
-                  tempFilters.bathrooms === 5
-                    ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
-                    : 'border-gray-300 text-[#0B1F3A] hover:border-[#C9A84C] hover:text-[#C9A84C]'
-                }`}
-              >
-                4+
-              </button>
-            </div>
-          </div>
+              <div className="mb-6">
+                <label className="block text-[#6B7280] mb-2 font-medium">Bathrooms</label>
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => handleBathroomsChange(tempFilters.bathrooms === num ? null : num)}
+                      className={`px-4 py-2 rounded-lg border transition-colors ${
+                        tempFilters.bathrooms === num
+                          ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
+                          : 'border-gray-300 text-[#0B1F3A] hover:border-[#C9A84C] hover:text-[#C9A84C]'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                  <button 
+                    onClick={() => handleBathroomsChange(tempFilters.bathrooms === 5 ? null : 5)}
+                    className={`px-4 py-2 rounded-lg border transition-colors ${
+                      tempFilters.bathrooms === 5
+                        ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
+                        : 'border-gray-300 text-[#0B1F3A] hover:border-[#C9A84C] hover:text-[#C9A84C]'
+                    }`}
+                  >
+                    4+
+                  </button>
+                </div>
+              </div>
 
-          <div className="mb-6">
-            <label className="block text-[#6B7280] mb-2 font-medium">Features</label>
-            <div className="space-y-2">
-              {['Garden', 'Swimming Pool', 'Security', 'WiFi', 'Parking', 'AC'].map((feature, i) => (
-                <label key={i} className="flex items-center gap-2 cursor-pointer text-[#6B7280]">
-                  <input 
-                    type="checkbox" 
-                    checked={tempFilters.features.includes(feature)}
-                    onChange={() => handleFeatureToggle(feature)}
-                    className="rounded border-gray-300 text-[#C9A84C] focus:ring-[#C9A84C]" 
-                  />
-                  {feature}
-                </label>
-              ))}
-            </div>
-          </div>
+              <div className="mb-6">
+                <label className="block text-[#6B7280] mb-2 font-medium">Features</label>
+                <div className="space-y-2">
+                  {['Garden', 'Swimming Pool', 'Security', 'WiFi', 'Parking', 'AC'].map((feature, i) => (
+                    <label key={i} className="flex items-center gap-2 cursor-pointer text-[#6B7280]">
+                      <input 
+                        type="checkbox" 
+                        checked={tempFilters.features.includes(feature)}
+                        onChange={() => handleFeatureToggle(feature)}
+                        className="rounded border-gray-300 text-[#C9A84C] focus:ring-[#C9A84C]" 
+                      />
+                      {feature}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           <button 
             onClick={handleApply}
