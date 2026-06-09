@@ -151,7 +151,7 @@ export default function EditPropertyPage() {
         for (const section of Object.values(CATEGORIES)) {
           for (const cat of section.subcategories) {
             if (cat.type === data.type && cat.listingType === data.listingType) {
-              if (data.furnished !== undefined && cat.furnished !== undefined) {
+              if (data.furnished !== undefined && 'furnished' in cat) {
                 if (cat.furnished === data.furnished) {
                   foundCategory = cat;
                   break;

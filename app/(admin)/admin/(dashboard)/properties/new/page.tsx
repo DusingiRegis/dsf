@@ -114,7 +114,7 @@ export default function AddPropertyPage() {
       ...prev,
       type: category.type,
       listingType: category.listingType,
-      furnished: category.furnished || false,
+      furnished: 'furnished' in category ? category.furnished : false,
     }));
     setSelectedFeatures([]);
   };
