@@ -19,25 +19,39 @@ export default function HomePage() {
       const formattedProperties = (data.properties || data).map((prop: any) => {
         let image = "";
         if (prop.images) {
-          try {
-            const imagesArray = JSON.parse(prop.images);
-            if (imagesArray.length > 0) image = imagesArray[0];
-          } catch (e) {
-            image = prop.images;
+          // If it's already an array, use first element
+          if (Array.isArray(prop.images)) {
+            if (prop.images.length > 0) image = prop.images[0];
+          } else if (typeof prop.images === 'string') {
+            // If it's a string, try to parse
+            try {
+              const imagesArray = JSON.parse(prop.images);
+              if (Array.isArray(imagesArray) && imagesArray.length > 0) image = imagesArray[0];
+            } catch (e) {
+              image = prop.images;
+            }
           }
         }
 
         let category = "Property";
-        if (prop.type === "house") category = "Houses for Sale";
-        if (prop.type === "apartment") category = "Sales Apartments";
-        if (prop.type === "plot") category = "Land/Plot Sales";
-        if (prop.type === "commercial") category = "Commercial Sales";
+        if (prop.listingType === 'sale') {
+          if (prop.type === "house") category = "Houses for Sale";
+          if (prop.type === "apartment") category = "Sales Apartments";
+          if (prop.type === "plot") category = "Land/Plot Sales";
+          if (prop.type === "commercial") category = "Commercial Sales";
+          if (prop.type === "car") category = "Vehicles";
+        } else if (prop.listingType === 'rent') {
+          if (prop.type === "house") category = "Houses for Rent";
+          if (prop.type === "apartment") category = "Apartments for Rent";
+          if (prop.type === "commercial") category = "Commercial Rentals";
+        }
 
         return {
           id: prop.id,
           title: prop.title,
           type: prop.type,
           status: prop.status,
+          listingType: prop.listingType,
           category: category,
           price: prop.price,
           currency: prop.currency || 'USD',

@@ -139,7 +139,18 @@ export default function CarsClient() {
 
   // Format car data
   const formatCar = (property: any) => {
-    const images = property.images ? JSON.parse(property.images) : [];
+    let images: string[] = [];
+    if (property.images) {
+      if (Array.isArray(property.images)) {
+        images = property.images;
+      } else if (typeof property.images === 'string') {
+        try {
+          images = JSON.parse(property.images);
+        } catch {
+          images = [];
+        }
+      }
+    }
     return {
       id: property.id,
       title: property.title,

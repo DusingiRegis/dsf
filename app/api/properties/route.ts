@@ -91,8 +91,36 @@ export async function GET(req: Request) {
       prisma.property.count({ where }),
     ]);
 
+    // Parse images, videos, and features for each property
+    const processedProperties = properties.map((property) => {
+      return {
+        ...property,
+        images: (() => {
+          try {
+            return JSON.parse(property.images || "[]");
+          } catch {
+            return [];
+          }
+        })(),
+        videos: (() => {
+          try {
+            return JSON.parse(property.videos || "[]");
+          } catch {
+            return [];
+          }
+        })(),
+        features: (() => {
+          try {
+            return JSON.parse(property.features || "[]");
+          } catch {
+            return [];
+          }
+        })(),
+      };
+    });
+
     return NextResponse.json({
-      properties,
+      properties: processedProperties,
       totalCount,
       page,
       totalPages: Math.ceil(totalCount / limit),

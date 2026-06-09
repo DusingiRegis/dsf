@@ -91,16 +91,20 @@ export default function PropertiesClient() {
       
       // Convert API data to our component format
       const formattedProperties = data.properties.map((prop: any) => {
-        // Parse images from JSON string
+        // Parse images
         let image = '';
         if (prop.images) {
-          try {
-            const imagesArray = JSON.parse(prop.images);
-            if (imagesArray.length > 0) {
-              image = imagesArray[0];
+          if (Array.isArray(prop.images)) {
+            if (prop.images.length > 0) image = prop.images[0];
+          } else if (typeof prop.images === 'string') {
+            try {
+              const imagesArray = JSON.parse(prop.images);
+              if (Array.isArray(imagesArray) && imagesArray.length > 0) {
+                image = imagesArray[0];
+              }
+            } catch (e) {
+              image = prop.images;
             }
-          } catch (e) {
-            image = prop.images;
           }
         }
 
