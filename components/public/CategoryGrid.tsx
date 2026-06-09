@@ -3,74 +3,93 @@ import Link from 'next/link';
 const categories = [
   {
     name: 'Furnished Rentals',
-    link: '/properties?type=furnished',
-    emoji: '🛋️',
-    color: '#1e3a5f',
+    link: '/properties?type=furnished&status=rent',
+    comingSoon: false,
   },
   {
-    name: 'Rental Apartments',
+    name: 'Rental Apartment',
     link: '/properties?type=apartment&status=rent',
-    emoji: '🏢',
-    color: '#2d5a4f',
+    comingSoon: false,
   },
   {
     name: 'Unfurnished Rentals',
-    link: '/properties?type=unfurnished',
-    emoji: '🏠',
-    color: '#3a4d6f',
+    link: '/properties?type=unfurnished&status=rent',
+    comingSoon: false,
   },
   {
     name: 'Commercial Rentals',
     link: '/properties?type=commercial&status=rent',
-    emoji: '🏪',
-    color: '#2f4a6a',
+    comingSoon: false,
   },
   {
-    name: 'Sales Apartments',
+    name: 'Sales Apartment',
     link: '/properties?type=apartment&status=sale',
-    emoji: '🏘️',
-    color: '#1f3f5f',
+    comingSoon: false,
   },
   {
     name: 'Houses for Sale',
     link: '/properties?type=house&status=sale',
-    emoji: '🏡',
-    color: '#2a4a6a',
+    comingSoon: false,
   },
   {
     name: 'Land/Plot Sales',
     link: '/properties?type=plot&status=sale',
-    emoji: '🌳',
-    color: '#3a6f4a',
+    comingSoon: false,
   },
   {
-    name: 'Cars for Sale',
-    link: '/cars?status=sale',
-    emoji: '🚗',
-    color: '#5f3a4f',
+    name: 'Commercial Sales',
+    link: '/properties?type=commercial&status=sale',
+    comingSoon: false,
+  },
+  {
+    name: 'Coming Soon',
+    link: '#',
+    comingSoon: true,
   },
 ];
 
 export default function CategoryGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
       {categories.map((category, index) => (
-        <Link
-          key={index}
-          href={category.link}
-          className="relative h-56 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow group"
-        >
-          <div
-            className="absolute inset-0 flex items-center justify-center text-6xl transition-transform duration-500 group-hover:scale-110"
-            style={{ backgroundColor: category.color }}
-          >
-            {category.emoji}
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F3A] to-transparent" />
-          <div className="absolute inset-0 flex items-end p-6">
-            <h3 className="text-white text-xl font-semibold group-hover:text-[#C9A84C] transition-colors">{category.name}</h3>
-          </div>
-        </Link>
+        <div key={index} className="relative">
+          {category.comingSoon ? (
+            <div className="p-4 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col items-center gap-4 opacity-60 cursor-not-allowed">
+              <div className="relative">
+                {/* Outer Ring */}
+                <div className="w-28 h-28 rounded-full border-4 border-[#C9A84C] flex items-center justify-center">
+                  {/* Inner Ring */}
+                  <div className="w-24 h-24 rounded-full border-2 border-[#C9A84C]/50 bg-white flex items-center justify-center">
+                    <span className="text-[#0B1F3A] font-bold uppercase text-xs text-center leading-tight px-2">
+                      {category.name}
+                    </span>
+                  </div>
+                </div>
+                {/* Coming Soon Badge */}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gray-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                  Coming Soon
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href={category.link}
+              className="p-4 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col items-center gap-4 cursor-pointer group"
+            >
+              <div className="relative">
+                {/* Outer Ring */}
+                <div className="w-28 h-28 rounded-full border-4 border-[#C9A84C] flex items-center justify-center transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(201,168,76,0.6)]">
+                  {/* Inner Ring */}
+                  <div className="w-24 h-24 rounded-full border-2 border-[#C9A84C]/50 bg-white flex items-center justify-center">
+                    <span className="text-[#0B1F3A] font-bold uppercase text-xs text-center leading-tight px-2">
+                      {category.name}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )}
+        </div>
       ))}
     </div>
   );
