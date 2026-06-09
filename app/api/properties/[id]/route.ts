@@ -19,13 +19,25 @@ export async function GET(
 
     const propertyForEdit = {
       ...property,
-      // Map listingType to "listing" for form
-      listing: property.listingType === "rent" ? "For Rent" : "For Sale",
       // Map status to "in_talks" if pending
       status: property.status === "pending" ? "in_talks" : property.status,
       images: (() => {
         try {
           return JSON.parse(property.images || "[]");
+        } catch {
+          return [];
+        }
+      })(),
+      videos: (() => {
+        try {
+          return JSON.parse(property.videos || "[]");
+        } catch {
+          return [];
+        }
+      })(),
+      features: (() => {
+        try {
+          return JSON.parse(property.features || "[]");
         } catch {
           return [];
         }
@@ -50,20 +62,54 @@ export async function PUT(
     const body = await req.json();
     
     // Map form fields to database fields
-    const data: any = {
-      ...body,
-    };
+    const data: any = {};
     
-    // Handle listing -> listingType
-    if (body.listing) {
-      data.listingType = body.listing === "For Rent" ? "rent" : "sale";
-      delete data.listing;
+    // Basic fields
+    if (body.title !== undefined) data.title = body.title;
+    if (body.type !== undefined) data.type = body.type;
+    if (body.listingType !== undefined) data.listingType = body.listingType;
+    if (body.price !== undefined) data.price = Number(body.price);
+    if (body.currency !== undefined) data.currency = body.currency;
+    if (body.location !== undefined) data.location = body.location;
+    if (body.neighborhood !== undefined) data.neighborhood = body.neighborhood || null;
+    if (body.contactPhone !== undefined) data.contactPhone = body.contactPhone || null;
+    if (body.size !== undefined) data.size = body.size ? Number(body.size) : null;
+    if (body.bedrooms !== undefined) data.bedrooms = body.bedrooms ? Number(body.bedrooms) : null;
+    if (body.bathrooms !== undefined) data.bathrooms = body.bathrooms ? Number(body.bathrooms) : null;
+    if (body.description !== undefined) data.description = body.description;
+    if (body.images !== undefined) data.images = body.images;
+    if (body.videos !== undefined) data.videos = body.videos;
+    if (body.status !== undefined) {
+      // Handle status values (in_talks vs pending)
+      data.status = body.status === "in_talks" ? "pending" : body.status;
     }
+    if (body.featured !== undefined) data.featured = Boolean(body.featured);
+    if (body.acceptInquiries !== undefined) data.acceptInquiries = body.acceptInquiries !== false;
     
-    // Handle status values (in_talks vs pending)
-    if (body.status === "in_talks") {
-      data.status = "pending";
-    }
+    // Rental specific
+    if (body.furnished !== undefined) data.furnished = Boolean(body.furnished);
+    if (body.pricePeriod !== undefined) data.pricePeriod = body.pricePeriod || null;
+    
+    // Sales specific
+    if (body.titleDeed !== undefined) data.titleDeed = body.titleDeed || null;
+    if (body.titleDeedType !== undefined) data.titleDeedType = body.titleDeedType || null;
+    
+    // Plot specific
+    if (body.plotSize !== undefined) data.plotSize = body.plotSize ? Number(body.plotSize) : null;
+    if (body.zoning !== undefined) data.zoning = body.zoning || null;
+    if (body.roadAccess !== undefined) data.roadAccess = body.roadAccess || null;
+    
+    // Car specific
+    if (body.make !== undefined) data.make = body.make || null;
+    if (body.model !== undefined) data.model = body.model || null;
+    if (body.year !== undefined) data.year = body.year ? Number(body.year) : null;
+    if (body.mileage !== undefined) data.mileage = body.mileage ? Number(body.mileage) : null;
+    if (body.fuelType !== undefined) data.fuelType = body.fuelType || null;
+    if (body.transmission !== undefined) data.transmission = body.transmission || null;
+    if (body.color !== undefined) data.color = body.color || null;
+    
+    // Features
+    if (body.features !== undefined) data.features = body.features;
     
     const updated = await prisma.property.update({
       where: { id: params.id },

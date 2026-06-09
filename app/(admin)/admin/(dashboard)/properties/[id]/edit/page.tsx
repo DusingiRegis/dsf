@@ -1,548 +1,844 @@
-"use client"
+'use client';
 
-import { useEffect, useState, useRef } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
-interface PropertyForm {
-  title:       string
-  type:        string
-  listing:     string
-  price:       string
-  currency:    string
-  location:    string
-  size:        string
-  bedrooms:    string
-  bathrooms:   string
-  description: string
-  status:      string
-  featured:    boolean
-  images:      string[]
-}
+// Define categories with their configurations
+const CATEGORIES = {
+  rental: {
+    title: 'For Rent',
+    subcategories: [
+      { id: 'apartment-furnished', name: 'Furnished Apartment', icon: '🏢', type: 'apartment', listingType: 'rent', furnished: true },
+      { id: 'apartment', name: 'Apartment', icon: '🏠', type: 'apartment', listingType: 'rent', furnished: false },
+      { id: 'house-rent', name: 'House for Rent', icon: '🏡', type: 'house', listingType: 'rent' },
+      { id: 'commercial-rent', name: 'Commercial Space', icon: '🏪', type: 'commercial', listingType: 'rent' },
+    ]
+  },
+  sale: {
+    title: 'For Sale',
+    subcategories: [
+      { id: 'apartment-sale', name: 'Apartment', icon: '🏢', type: 'apartment', listingType: 'sale' },
+      { id: 'house-sale', name: 'House', icon: '🏡', type: 'house', listingType: 'sale' },
+      { id: 'plot', name: 'Land/Plot', icon: '🌳', type: 'plot', listingType: 'sale' },
+      { id: 'commercial-sale', name: 'Commercial', icon: '🏪', type: 'commercial', listingType: 'sale' },
+    ]
+  },
+  cars: {
+    title: 'Vehicles',
+    subcategories: [
+      { id: 'car', name: 'Car', icon: '🚗', type: 'car', listingType: 'sale' },
+    ]
+  }
+};
+
+// Feature options by category type
+const FEATURE_OPTIONS = {
+  house: ['Swimming Pool', 'Garden', 'Garage', 'Security', 'Air Conditioning', 'Gym', 'Balcony'],
+  apartment: ['Swimming Pool', 'Elevator', 'Security', 'Air Conditioning', 'Gym', 'Balcony', 'Parking'],
+  plot: ['Fenced', 'Water Supply', 'Electricity', 'Road Access', 'Zoned'],
+  commercial: ['Parking', 'Security', 'Elevator', 'Warehouse', 'Office Space'],
+  car: ['Leather Seats', 'Sunroof', 'GPS', 'Bluetooth', 'Backup Camera', 'Alloy Wheels'],
+};
 
 export default function EditPropertyPage() {
-  const params  = useParams()
-  const router  = useRouter()
-  const id      = params.id as string
-  const fileRef = useRef<HTMLInputElement>(null)
+  const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
+  
+  const [loading, setLoading] = useState(true);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideos, setUploadingVideos] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [toast, setToast] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
-  const [loading,       setLoading]       = useState(true)
-  const [saving,        setSaving]        = useState(false)
-  const [uploading,     setUploading]     = useState(false)
-  const [error,         setError]         = useState("")
-  const [success,       setSuccess]       = useState("")
-  const [previewImages, setPreviewImages] = useState<string[]>([])
+  const [formData, setFormData] = useState({
+    title: '',
+    type: 'house',
+    listingType: 'sale',
+    price: 0,
+    currency: 'USD',
+    location: '',
+    neighborhood: '',
+    contactPhone: '',
+    size: 0,
+    bedrooms: null as number | null,
+    bathrooms: null as number | null,
+    description: '',
+    status: 'available',
+    featured: false,
+    acceptInquiries: true,
+    images: '[]',
+    videos: '[]',
+    
+    // Rental specific
+    furnished: false,
+    pricePeriod: 'monthly',
+    
+    // Sales specific
+    titleDeed: '',
+    titleDeedType: '',
+    
+    // Plot specific
+    plotSize: 0,
+    zoning: '',
+    roadAccess: '',
+    
+    // Car specific
+    make: '',
+    model: '',
+    year: null as number | null,
+    mileage: null as number | null,
+    fuelType: '',
+    transmission: '',
+    color: '',
+  });
 
-  const [form, setForm] = useState<PropertyForm>({
-    title:       "",
-    type:        "house",
-    listing:     "For Sale",
-    price:       "",
-    currency:    "FRW",
-    location:    "",
-    size:        "",
-    bedrooms:    "",
-    bathrooms:   "",
-    description: "",
-    status:      "available",
-    featured:    false,
-    images:      [],
-  })
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [newVideoUrl, setNewVideoUrl] = useState('');
+
+  // Auto dismiss toast after 4 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   // Fetch existing property data
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const res  = await fetch(`/api/properties/${id}`)
-        const data = await res.json()
+        const res = await fetch(`/api/properties/${id}`);
+        const data = await res.json();
 
         if (!res.ok) {
-          setError("Property not found")
-          return
+          setToast({ type: 'error', message: 'Property not found' });
+          return;
         }
 
         // Parse images
-        let images: string[] = []
+        let images: string[] = [];
         try {
-          images = Array.isArray(data.images)
-            ? data.images
-            : JSON.parse(data.images || "[]")
+          images = Array.isArray(data.images) ? data.images : JSON.parse(data.images || '[]');
         } catch {
-          images = []
+          images = [];
         }
 
-        setForm({
-          title:       data.title       || "",
-          type:        data.type        || "house",
-          listing:     data.listing     || "For Sale",
-          price:       data.price?.toString() || "",
-          currency:    data.currency    || "FRW",
-          location:    data.location    || "",
-          size:        data.size?.toString() || "",
-          bedrooms:    data.bedrooms?.toString() || "",
-          bathrooms:   data.bathrooms?.toString() || "",
-          description: data.description || "",
-          status:      data.status      || "available",
-          featured:    data.featured    || false,
-          images,
-        })
+        let videos: string[] = [];
+        try {
+          videos = Array.isArray(data.videos) ? data.videos : JSON.parse(data.videos || '[]');
+        } catch {
+          videos = [];
+        }
 
-        setPreviewImages(images)
+        let features: string[] = [];
+        try {
+          features = Array.isArray(data.features) ? data.features : JSON.parse(data.features || '[]');
+        } catch {
+          features = [];
+        }
 
-      } catch (err) {
-        setError("Failed to load property")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (id) fetchProperty()
-  }, [id])
-
-  // Handle input changes
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value, type } = e.target
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox"
-        ? (e.target as HTMLInputElement).checked
-        : value,
-    }))
-  }
-
-  // Remove an existing image
-  const handleRemoveImage = (index: number) => {
-    const confirmed = window.confirm(
-      "Remove this image?"
-    )
-    if (!confirmed) return
-
-    const updated = previewImages.filter((_, i) => i !== index)
-    setPreviewImages(updated)
-    setForm((prev) => ({ ...prev, images: updated }))
-  }
-
-  // Upload new images
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files
-      if (!files || files.length === 0) return
-
-      setUploading(true)
-
-      try {
-        const uploadedUrls: string[] = []
-
-        for (const file of Array.from(files)) {
-          const formData = new FormData()
-          formData.append("file", file)
-
-          const res = await fetch("/api/upload", {
-            method: "POST",
-            body:   formData,
-          })
-
-          if (res.ok) {
-            const data = await res.json()
-            uploadedUrls.push(data.url)
-          } else {
-            const data = await res.json()
-            console.error("Upload error:", data)
-            setError(data.error || "Failed to upload image")
+        // Find matching category
+        let foundCategory: any = null;
+        for (const section of Object.values(CATEGORIES)) {
+          for (const cat of section.subcategories) {
+            if (cat.type === data.type && cat.listingType === data.listingType) {
+              if (data.furnished !== undefined && cat.furnished !== undefined) {
+                if (cat.furnished === data.furnished) {
+                  foundCategory = cat;
+                  break;
+                }
+              } else {
+                foundCategory = cat;
+                break;
+              }
+            }
+          }
+          if (foundCategory) break;
+        }
+        if (!foundCategory) {
+          for (const section of Object.values(CATEGORIES)) {
+            for (const cat of section.subcategories) {
+              if (cat.type === data.type) {
+                foundCategory = cat;
+                break;
+              }
+            }
+            if (foundCategory) break;
           }
         }
 
-        if (uploadedUrls.length > 0) {
-          // Add new images to existing ones
-          const updated = [...previewImages, ...uploadedUrls]
-          setPreviewImages(updated)
-          setForm((prev) => ({ ...prev, images: updated }))
-        }
+        setSelectedCategory(foundCategory);
+        setSelectedFeatures(features);
+        setImageUrls(images);
+        setVideoUrls(videos);
 
-      } catch (err) {
-        console.error("Upload error:", err)
-        setError("Failed to upload images")
+        setFormData({
+          title: data.title || '',
+          type: data.type || 'house',
+          listingType: data.listingType || 'sale',
+          price: data.price || 0,
+          currency: data.currency || 'USD',
+          location: data.location || '',
+          neighborhood: data.neighborhood || '',
+          contactPhone: data.contactPhone || '',
+          size: data.size || 0,
+          bedrooms: data.bedrooms || null,
+          bathrooms: data.bathrooms || null,
+          description: data.description || '',
+          status: data.status || 'available',
+          featured: data.featured || false,
+          acceptInquiries: data.acceptInquiries !== false,
+          images: JSON.stringify(images),
+          videos: JSON.stringify(videos),
+          furnished: data.furnished || false,
+          pricePeriod: data.pricePeriod || 'monthly',
+          titleDeed: data.titleDeed || '',
+          titleDeedType: data.titleDeedType || '',
+          plotSize: data.plotSize || 0,
+          zoning: data.zoning || '',
+          roadAccess: data.roadAccess || '',
+          make: data.make || '',
+          model: data.model || '',
+          year: data.year || null,
+          mileage: data.mileage || null,
+          fuelType: data.fuelType || '',
+          transmission: data.transmission || '',
+          color: data.color || '',
+        });
+
+      } catch (error) {
+        console.error('Error fetching property:', error);
+        setToast({ type: 'error', message: 'Failed to load property' });
       } finally {
-        setUploading(false)
+        setLoading(false);
       }
+    };
+
+    if (id) fetchProperty();
+  }, [id]);
+
+  const handleCategorySelect = (category: any) => {
+    setSelectedCategory(category);
+    setFormData(prev => ({
+      ...prev,
+      type: category.type,
+      listingType: category.listingType,
+      furnished: category.furnished || false,
+    }));
+    setSelectedFeatures([]);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    let processedValue = value;
+    
+    // Allow only numbers for phone fields
+    if (name === 'contactPhone') {
+      processedValue = value.replace(/[^0-9]/g, '');
     }
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]:
+        type === 'number' ? (processedValue ? Number(processedValue) : null) :
+        type === 'checkbox' ? (e.target as HTMLInputElement).checked :
+        processedValue,
+    }));
+  };
 
-  // Handle form submit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setError("")
-    setSuccess("")
+  const toggleFeature = (feature: string) => {
+    setSelectedFeatures(prev => 
+      prev.includes(feature) 
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
+  };
 
+  const uploadFile = async (file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const response = await fetch('/api/upload', { method: 'POST', body: fd });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Upload failed');
+    if (data.url) return data.url;
+    throw new Error('Upload failed: No URL returned');
+  };
+
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingImages(true);
     try {
-      const res = await fetch(`/api/properties/${id}`, {
-        method:  "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          price:     parseFloat(form.price),
-          size:      parseFloat(form.size),
-          bedrooms:  form.bedrooms  ? parseInt(form.bedrooms)  : null,
-          bathrooms: form.bathrooms ? parseInt(form.bathrooms) : null,
-          images:    JSON.stringify(previewImages),
-        }),
-      })
-
-      if (res.ok) {
-        setSuccess("✅ Property updated successfully!")
-        setTimeout(() => router.push("/admin/properties"), 2000)
-      } else {
-        const data = await res.json()
-        setError(data.error || "❌ Failed to update")
-      }
-
-    } catch (err) {
-      setError("❌ Something went wrong")
+      const newUrls = await Promise.all(files.map(uploadFile));
+      const updated = [...imageUrls, ...newUrls];
+      setImageUrls(updated);
+      setFormData(prev => ({ ...prev, images: JSON.stringify(updated) }));
+    } catch (error) {
+      setToast({
+        type: 'error',
+        message: `Failed to upload images: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
     } finally {
-      setSaving(false)
+      setUploadingImages(false);
     }
-  }
+  };
+
+  const addImage = () => {
+    if (!newImageUrl.trim()) return;
+    const updated = [...imageUrls, newImageUrl.trim()];
+    setImageUrls(updated);
+    setFormData(prev => ({ ...prev, images: JSON.stringify(updated) }));
+    setNewImageUrl('');
+  };
+
+  const removeImage = (index: number) => {
+    const updated = imageUrls.filter((_, i) => i !== index);
+    setImageUrls(updated);
+    setFormData(prev => ({ ...prev, images: JSON.stringify(updated) }));
+  };
+
+  const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingVideos(true);
+    try {
+      const newUrls = await Promise.all(files.map(uploadFile));
+      const updated = [...videoUrls, ...newUrls];
+      setVideoUrls(updated);
+      setFormData(prev => ({ ...prev, videos: JSON.stringify(updated) }));
+    } catch (error) {
+      setToast({
+        type: 'error',
+        message: `Failed to upload videos: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
+    } finally {
+      setUploadingVideos(false);
+    }
+  };
+
+  const addVideo = () => {
+    if (!newVideoUrl.trim()) return;
+    const updated = [...videoUrls, newVideoUrl.trim()];
+    setVideoUrls(updated);
+    setFormData(prev => ({ ...prev, videos: JSON.stringify(updated) }));
+    setNewVideoUrl('');
+  };
+
+  const removeVideo = (index: number) => {
+    const updated = videoUrls.filter((_, i) => i !== index);
+    setVideoUrls(updated);
+    setFormData(prev => ({ ...prev, videos: JSON.stringify(updated) }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const submitData = {
+        ...formData,
+        features: JSON.stringify(selectedFeatures),
+      };
+      const response = await fetch(`/api/properties/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submitData),
+      });
+      if (response.ok) {
+        setToast({
+          type: 'success',
+          message: 'Property updated successfully!'
+        });
+        setTimeout(() => {
+          router.push('/admin/properties');
+        }, 1500);
+      } else {
+        const data = await response.json();
+        setToast({
+          type: 'error',
+          message: data.error || 'Failed to update property'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating property:', error);
+      setToast({
+        type: 'error',
+        message: 'Something went wrong, please try again'
+      });
+    }
+  };
+
+  const inputClass = "w-full border border-slate-300 rounded-lg px-4 py-2 text-[#0B1F3A] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A84C] text-sm";
+  const categoryTileClass = (selected: boolean) => 
+    `p-4 border-2 rounded-xl cursor-pointer transition-all ${
+      selected 
+        ? 'border-[#C9A84C] bg-[#C9A84C]/10' 
+        : 'border-slate-200 hover:border-[#C9A84C]/50'
+    }`;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-10 h-10 border-4 border-[#C9A84C] border-t-transparent rounded-full animate-spin" />
       </div>
-    )
+    );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <button
-          onClick={() => router.push("/admin/properties")}
-          className="text-gray-500 hover:text-[#0B1F3A] transition"
+    <>
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl text-white transform transition-all duration-300 ${
+            toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+          } ${toast ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
         >
-          ← Back
+          <span className="text-2xl flex-shrink-0">
+            {toast.type === 'success' ? '✓' : '✕'}
+          </span>
+          <p className="text-sm font-medium flex-1">{toast.message}</p>
+          <button
+            onClick={() => setToast(null)}
+            className="text-white hover:opacity-70 transition-opacity text-xl leading-none"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <div className="p-4 md:p-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#0B1F3A]">Edit Property</h1>
+        <button
+          onClick={() => router.back()}
+          className="text-sm text-slate-500 border border-slate-300 rounded-lg px-4 py-2 hover:bg-slate-100 transition-colors w-full md:w-auto"
+        >
+          Cancel
         </button>
-        <h1 className="text-2xl font-bold text-[#0B1F3A]">
-          Edit Property
-        </h1>
       </div>
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-          {success}
-        </div>
-      )}
+      {/* Card */}
+      <div className="bg-white rounded-xl shadow-md overflow-hidden max-w-4xl">
+        <form onSubmit={handleSubmit} className="p-4 md:p-8 space-y-8">
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6">
-          {error}
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-2xl shadow p-6 flex flex-col gap-5"
-      >
-
-        {/* ── IMAGES SECTION ── */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-3 block">
-            Property Images
-          </label>
-
-          {/* Existing Images Grid */}
-          {previewImages.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-              {previewImages.map((img, index) => (
-                <div
-                  key={index}
-                  className="relative group rounded-xl overflow-hidden border border-gray-200"
-                >
-                  {/* Image */}
-                  <img
-                    src={img}
-                    alt={`Property image ${index + 1}`}
-                    className="w-full h-40 object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = 'data:image/svg+xml,' + encodeURIComponent(`
-                        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
-                          <rect width="200" height="200" fill="#f3f4f6"/>
-                          <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#6b7280">Photo</text>
-                        </svg>
-                      `);
-                    }}
-                  />
-
-                  {/* Delete button — shows on hover */}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600 text-sm"
-                  >
-                    ✕
-                  </button>
-
-                  {/* Image number badge */}
-                  <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                    {index + 1}
+          {/* Category Selection */}
+          {!selectedCategory ? (
+            <div className="space-y-8">
+              {Object.entries(CATEGORIES).map(([sectionKey, section]) => (
+                <div key={sectionKey}>
+                  <h2 className="text-lg font-semibold text-[#0B1F3A] mb-4">{section.title}</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {section.subcategories.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => handleCategorySelect(category)}
+                        className={categoryTileClass(false)}
+                      >
+                        <div className="text-3xl mb-2">{category.icon}</div>
+                        <div className="text-sm font-medium text-[#0B1F3A]">{category.name}</div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center text-gray-400 mb-4">
-              🖼️ No images yet
+            <div className="space-y-6">
+              {/* Selected Category Display */}
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{selectedCategory.icon}</span>
+                  <div>
+                    <div className="font-semibold text-[#0B1F3A]">{selectedCategory.name}</div>
+                    <div className="text-xs text-slate-500">{selectedCategory.listingType === 'rent' ? 'For Rent' : 'For Sale'}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory(null)}
+                  className="text-sm text-slate-500 hover:text-slate-700"
+                >
+                  Change Category
+                </button>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Title</label>
+                <input type="text" name="title" value={formData.title} onChange={handleChange} className={inputClass} required />
+              </div>
+
+              {/* Price, Currency */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Price</label>
+                  <input type="number" name="price" value={formData.price} onChange={handleChange} className={inputClass} min={0} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Currency</label>
+                  <select name="currency" value={formData.currency} onChange={handleChange} className={inputClass}>
+                    <option value="USD">USD ($)</option>
+                    <option value="FRW">FRW (RWF)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Price Period - Only for Rentals */}
+              {selectedCategory.listingType === 'rent' && (
+                <div>
+                  <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Price Period</label>
+                  <select name="pricePeriod" value={formData.pricePeriod} onChange={handleChange} className={inputClass}>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                    <option value="daily">Daily</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Location & Neighborhood */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Location</label>
+                  <input type="text" name="location" value={formData.location} onChange={handleChange} className={inputClass} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Neighborhood</label>
+                  <input type="text" name="neighborhood" value={formData.neighborhood} onChange={handleChange} className={inputClass} />
+                </div>
+              </div>
+
+              {/* Contact Phone */}
+              <div>
+                <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Contact Phone</label>
+                <input type="tel" name="contactPhone" value={formData.contactPhone} onChange={handleChange} className={inputClass} />
+              </div>
+
+              {/* Property Specific Fields */}
+              {selectedCategory.type === 'car' ? (
+                <div className="space-y-6 border-t border-slate-200 pt-6">
+                  <h3 className="text-lg font-semibold text-[#0B1F3A]">Vehicle Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Make</label>
+                      <input type="text" name="make" value={formData.make} onChange={handleChange} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Model</label>
+                      <input type="text" name="model" value={formData.model} onChange={handleChange} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Year</label>
+                      <input type="number" name="year" value={formData.year || ''} onChange={handleChange} className={inputClass} min={1990} max={2030} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Mileage</label>
+                      <input type="number" name="mileage" value={formData.mileage || ''} onChange={handleChange} className={inputClass} min={0} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Fuel Type</label>
+                      <select name="fuelType" value={formData.fuelType} onChange={handleChange} className={inputClass}>
+                        <option value="">Select...</option>
+                        <option value="petrol">Petrol</option>
+                        <option value="diesel">Diesel</option>
+                        <option value="hybrid">Hybrid</option>
+                        <option value="electric">Electric</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Transmission</label>
+                      <select name="transmission" value={formData.transmission} onChange={handleChange} className={inputClass}>
+                        <option value="">Select...</option>
+                        <option value="automatic">Automatic</option>
+                        <option value="manual">Manual</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Color</label>
+                    <input type="text" name="color" value={formData.color} onChange={handleChange} className={inputClass} />
+                  </div>
+                </div>
+              ) : selectedCategory.type === 'plot' ? (
+                <div className="space-y-6 border-t border-slate-200 pt-6">
+                  <h3 className="text-lg font-semibold text-[#0B1F3A]">Plot Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Plot Size</label>
+                      <input type="number" name="plotSize" value={formData.plotSize} onChange={handleChange} className={inputClass} min={0} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Zoning</label>
+                      <input type="text" name="zoning" value={formData.zoning} onChange={handleChange} className={inputClass} placeholder="e.g., Residential, Commercial" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Road Access</label>
+                      <input type="text" name="roadAccess" value={formData.roadAccess} onChange={handleChange} className={inputClass} placeholder="e.g., Paved, Gravel" />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6 border-t border-slate-200 pt-6">
+                  <h3 className="text-lg font-semibold text-[#0B1F3A]">Property Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Size (sqft)</label>
+                      <input type="number" name="size" value={formData.size} onChange={handleChange} className={inputClass} min={0} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Bedrooms</label>
+                      <input type="number" name="bedrooms" value={formData.bedrooms || ''} onChange={handleChange} className={inputClass} min={0} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Bathrooms</label>
+                      <input type="number" name="bathrooms" value={formData.bathrooms || ''} onChange={handleChange} className={inputClass} min={0} />
+                    </div>
+                  </div>
+                  {selectedCategory.listingType === 'rent' && (
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="furnished"
+                        name="furnished"
+                        checked={formData.furnished}
+                        onChange={handleChange}
+                        className="w-4 h-4 accent-[#C9A84C] cursor-pointer"
+                      />
+                      <label htmlFor="furnished" className="text-sm font-medium text-[#0B1F3A] cursor-pointer">
+                        Furnished
+                      </label>
+                    </div>
+                  )}
+                  {selectedCategory.listingType === 'sale' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Title Deed Number</label>
+                        <input type="text" name="titleDeed" value={formData.titleDeed} onChange={handleChange} className={inputClass} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Title Deed Type</label>
+                        <input type="text" name="titleDeedType" value={formData.titleDeedType} onChange={handleChange} className={inputClass} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Features */}
+              {FEATURE_OPTIONS[selectedCategory.type as keyof typeof FEATURE_OPTIONS] && (
+                <div className="border-t border-slate-200 pt-6">
+                  <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Features & Amenities</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {FEATURE_OPTIONS[selectedCategory.type as keyof typeof FEATURE_OPTIONS].map(feature => (
+                      <button
+                        key={feature}
+                        type="button"
+                        onClick={() => toggleFeature(feature)}
+                        className={`px-4 py-2 rounded-full text-sm border transition-all ${
+                          selectedFeatures.includes(feature)
+                            ? 'bg-[#C9A84C] text-white border-[#C9A84C]'
+                            : 'bg-white text-slate-600 border-slate-300 hover:border-[#C9A84C]'
+                        }`}
+                      >
+                        {feature}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              <div className="border-t border-slate-200 pt-6">
+                <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={4}
+                  className={inputClass}
+                  required
+                />
+              </div>
+
+              {/* Images */}
+              <div className="border-t border-slate-200 pt-6">
+                <label className="block text-sm font-medium text-[#0B1F3A] mb-2">Images</label>
+                <div className="space-y-3">
+                  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-lg px-4 py-4 bg-slate-50 hover:border-[#C9A84C] cursor-pointer transition-colors">
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageFileUpload} disabled={uploadingImages} />
+                    <span className="text-sm text-slate-500">
+                      {uploadingImages ? 'Uploading images...' : '📷 Upload images from your computer'}
+                    </span>
+                  </label>
+                  <div>
+                    <p className="text-xs text-slate-400 mb-1">Or add via URL:</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newImageUrl}
+                        onChange={e => setNewImageUrl(e.target.value)}
+                        placeholder="Enter image URL"
+                        className={inputClass + ' flex-1'}
+                        onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addImage())}
+                      />
+                      <button
+                        type="button"
+                        onClick={addImage}
+                        className="px-4 py-2 text-sm font-semibold bg-[#C9A84C] text-white rounded-lg hover:bg-[#b8923d] transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {imageUrls.length > 0 && (
+                  <div className="grid grid-cols-3 gap-4 mt-4">
+                    {imageUrls.map((url, idx) => (
+                      <div key={idx} className="relative">
+                        <img src={url} alt={`Property ${idx + 1}`} className="w-full h-24 object-cover rounded-xl border border-slate-200" onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = 'data:image/svg+xml,' + encodeURIComponent(`
+                            <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+                              <rect width="200" height="200" fill="#f3f4f6"/>
+                              <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#6b7280">Photo</text>
+                            </svg>
+                          `);
+                        }} />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(idx)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Videos */}
+              <div className="border-t border-slate-200 pt-6">
+                <label className="block text-sm font-medium text-[#0B1F3A] mb-2">Videos</label>
+                <div className="space-y-3">
+                  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-lg px-4 py-4 bg-slate-50 hover:border-[#C9A84C] cursor-pointer transition-colors">
+                    <input type="file" accept="video/*" multiple className="hidden" onChange={handleVideoFileUpload} disabled={uploadingVideos} />
+                    <span className="text-sm text-slate-500">
+                      {uploadingVideos ? 'Uploading videos...' : '🎬 Upload videos from your computer'}
+                    </span>
+                  </label>
+                  <div>
+                    <p className="text-xs text-slate-400 mb-1">Or add via URL:</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newVideoUrl}
+                        onChange={e => setNewVideoUrl(e.target.value)}
+                        placeholder="Enter video URL (e.g., YouTube, Vimeo, etc.)"
+                        className={inputClass + ' flex-1'}
+                        onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addVideo())}
+                      />
+                      <button
+                        type="button"
+                        onClick={addVideo}
+                        className="px-4 py-2 text-sm font-semibold bg-[#C9A84C] text-white rounded-lg hover:bg-[#b8923d] transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {videoUrls.length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    {videoUrls.map((url, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-4 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                        <span className="text-sm text-slate-600 truncate flex-1">{url}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeVideo(idx)}
+                          className="text-sm text-red-500 hover:text-red-700 flex-shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Status & Options */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end border-t border-slate-200 pt-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#0B1F3A] mb-1">Status</label>
+                  <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
+                    <option value="available">Available</option>
+                    <option value="pending">In Talks</option>
+                    <option value="sold">Sold</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-3 pb-1">
+                  <input
+                    type="checkbox"
+                    id="featured"
+                    name="featured"
+                    checked={formData.featured}
+                    onChange={handleChange}
+                    className="w-4 h-4 accent-[#C9A84C] cursor-pointer"
+                  />
+                  <label htmlFor="featured" className="text-sm font-medium text-[#0B1F3A] cursor-pointer">
+                    Featured Property
+                  </label>
+                </div>
+                <div className="flex items-center gap-3 pb-1">
+                  <input
+                    type="checkbox"
+                    id="acceptInquiries"
+                    name="acceptInquiries"
+                    checked={formData.acceptInquiries}
+                    onChange={handleChange}
+                    className="w-4 h-4 accent-[#C9A84C] cursor-pointer"
+                  />
+                  <label htmlFor="acceptInquiries" className="text-sm font-medium text-[#0B1F3A] cursor-pointer">
+                    Accept Inquiries
+                  </label>
+                </div>
+              </div>
+
+              {/* Submit buttons */}
+              <div className="flex gap-3 pt-2 border-t border-slate-200 pt-6">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 text-sm font-semibold bg-[#C9A84C] text-white rounded-lg hover:bg-[#b8923d] transition-colors"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="px-6 py-2.5 text-sm text-slate-500 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Upload New Images Button */}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="w-full border-2 border-dashed border-[#C9A84C] text-[#C9A84C] py-3 rounded-xl hover:bg-yellow-50 transition font-medium disabled:opacity-50"
-          >
-            {uploading
-              ? "⏳ Uploading..."
-              : "📷 Upload New Images"}
-          </button>
-
-          <p className="text-xs text-gray-400 mt-2">
-            Hover over an image and click ✕ to remove it.
-            You can upload multiple images at once.
-          </p>
-        </div>
-
-        {/* ── ALL OTHER FIELDS ── */}
-
-        {/* Title */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1 block">
-            Property Title *
-          </label>
-          <input
-            type="text"
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-            required
-          />
-        </div>
-
-        {/* Type + Listing */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Property Type *
-            </label>
-            <select
-              name="type"
-              value={form.type}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-            >
-              <option value="house">House</option>
-              <option value="apartment">Apartment</option>
-              <option value="plot">Plot / Land</option>
-              <option value="furnished">Furnished</option>
-              <option value="unfurnished">Unfurnished</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Listing Type *
-            </label>
-            <select
-              name="listing"
-              value={form.listing}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-            >
-              <option value="For Sale">For Sale</option>
-              <option value="For Rent">For Rent</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Price + Currency */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Price *
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={form.price}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Currency *
-            </label>
-            <select
-              name="currency"
-              value={form.currency}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-            >
-              <option value="FRW">FRW</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Location + Size */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Location *
-            </label>
-            <input
-              type="text"
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Size (sqm) *
-            </label>
-            <input
-              type="number"
-              name="size"
-              value={form.size}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-              required
-            />
-          </div>
-        </div>
-
-        {/* Bedrooms + Bathrooms */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Bedrooms
-            </label>
-            <input
-              type="number"
-              name="bedrooms"
-              value={form.bedrooms}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Bathrooms
-            </label>
-            <input
-              type="number"
-              name="bathrooms"
-              value={form.bathrooms}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-            />
-          </div>
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1 block">
-            Status *
-          </label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
-            >
-              <option value="available">Available</option>
-              <option value="sold">Sold</option>
-              <option value="in_talks">In Talks</option>
-            </select>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1 block">
-            Description *
-          </label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            rows={5}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A84C] resize-none"
-            required
-          />
-        </div>
-
-        {/* Featured */}
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            name="featured"
-            id="featured"
-            checked={form.featured}
-            onChange={handleChange}
-            className="w-4 h-4 accent-[#C9A84C]"
-          />
-          <label
-            htmlFor="featured"
-            className="text-sm font-medium text-gray-700"
-          >
-            Mark as Featured Property
-          </label>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-4 pt-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex-1 bg-[#C9A84C] text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => router.push("/admin/properties")}
-            className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
-          >
-            Cancel
-          </button>
-        </div>
-
-      </form>
-    </div>
-  )
+        </form>
+      </div>
+      </div>
+    </>
+  );
 }
