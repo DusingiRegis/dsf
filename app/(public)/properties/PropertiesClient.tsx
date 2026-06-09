@@ -35,7 +35,7 @@ const PROPERTIES_PER_PAGE = 10;
 
 interface Filters {
   listingType: 'all' | 'rent' | 'sale';
-  status: 'all' | 'rent' | 'sale' | 'available' | 'sold' | 'pending';
+  status: 'all' | 'available' | 'sold' | 'pending';
   type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished' | 'car';
   location: string;
   minPrice: number | null;
@@ -162,9 +162,24 @@ export default function PropertiesClient() {
     const statusParam = searchParams.get('status');
     const listingTypeParam = searchParams.get('listingType');
     
+    let resolvedListingType: 'all' | 'rent' | 'sale' = 'all';
+    let resolvedStatus: 'all' | 'available' | 'sold' | 'pending' = 'all';
+    
+    // Remap params correctly
+    if (statusParam === 'rent' || statusParam === 'sale') {
+      resolvedListingType = statusParam; // maps to listingType in DB
+    } else if (statusParam === 'available' || statusParam === 'sold' || statusParam === 'pending') {
+      resolvedStatus = statusParam; // maps to actual status in DB
+    }
+    
+    // Also handle explicit listingType param
+    if (listingTypeParam === 'rent' || listingTypeParam === 'sale') {
+      resolvedListingType = listingTypeParam;
+    }
+
     const newFilters: Filters = {
-      listingType: (listingTypeParam as 'rent' | 'sale') || 'all',
-      status: (statusParam as 'available' | 'sold' | 'pending') || 'all',
+      listingType: resolvedListingType,
+      status: resolvedStatus,
       type: (typeParam as 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished' | 'car') || 'all',
       location: searchParams.get('location') || '',
       minPrice: searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : null,
@@ -189,9 +204,9 @@ export default function PropertiesClient() {
     setFilters(updatedFilters);
     setCurrentPage(1);
     
-    // Update URL params
+    // Update URL params (use "status" in URL for backward compatibility)
     const params = new URLSearchParams();
-    if (updatedFilters.listingType !== 'all') params.set('listingType', updatedFilters.listingType);
+    if (updatedFilters.listingType !== 'all') params.set('status', updatedFilters.listingType); // Use status in URL for navbar links
     if (updatedFilters.status !== 'all') params.set('status', updatedFilters.status);
     if (updatedFilters.type !== 'all') params.set('type', updatedFilters.type);
     if (updatedFilters.location) params.set('location', updatedFilters.location);
@@ -214,16 +229,16 @@ export default function PropertiesClient() {
 
   const getPageTitle = () => {
     const typeText = filters.listingType === 'rent' ? 'Rent' : 'Sale';
-    if (filters.type === "furnished" && filters.status === "available") return `Furnished Available for ${typeText}`;
-    if (filters.type === "unfurnished" && filters.status === "available") return `Unfurnished Available for ${typeText}`;
-    if (filters.type === "apartment" && filters.status === "available") return `Available Apartments for ${typeText}`;
-    if (filters.type === "commercial" && filters.status === "available") return `Commercial Available for ${typeText}`;
-    if (filters.type === "house" && filters.status === "available") return `Houses for ${typeText}`;
-    if (filters.type === "plot" && filters.status === "available") return `Plots / Land for ${typeText}`;
-    if (filters.type === "car" && filters.status === "available") return `Vehicles for ${typeText}`;
+    if (filters.type === "furnished" && filters.listingType === "rent") return `Furnished Apartments for ${typeText}`;
+    if (filters.type === "unfurnished" && filters.listingType === "rent") return `Unfurnished Apartments for ${typeText}`;
+    if (filters.type === "apartment" && filters.listingType !== "all") return `Apartments for ${typeText}`;
+    if (filters.type === "commercial" && filters.listingType !== "all") return `Commercial Properties for ${typeText}`;
+    if (filters.type === "house" && filters.listingType !== "all") return `Houses for ${typeText}`;
+    if (filters.type === "plot" && filters.listingType !== "all") return `Plots / Land for ${typeText}`;
+    if (filters.type === "car" && filters.listingType !== "all") return `Vehicles for ${typeText}`;
     if (filters.status === "sold") return "Sold Out Properties";
     if (filters.status === "pending") return "In Talks Properties";
-    if (filters.status === "available") return `Available Properties for ${typeText}`;
+    if (filters.status === "available") return "Available Properties";
     if (filters.listingType === 'rent') return "All Rental Properties";
     if (filters.listingType === 'sale') return "All Properties for Sale";
     return "All Properties";
