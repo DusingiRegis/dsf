@@ -5,18 +5,6 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/public/Sidebar';
 
-const dummyCars = [
-  { id: "1", title: "2023 Toyota Land Cruiser", brand: "Toyota", model: "Land Cruiser", year: 2023, price: 85000, mileage: 12000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "" },
-  { id: "2", title: "2022 Mercedes-Benz C-Class", brand: "Mercedes", model: "C-Class", year: 2022, price: 65000, mileage: 25000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "" },
-  { id: "3", title: "2021 BMW X5", brand: "BMW", model: "X5", year: 2021, price: 58000, mileage: 35000, fuelType: "Diesel", transmission: "Automatic", status: "sale" as const, image: "" },
-  { id: "4", title: "2024 Honda CR-V", brand: "Honda", model: "CR-V", year: 2024, price: 45000, mileage: 5000, fuelType: "Hybrid", transmission: "Automatic", status: "sale" as const, image: "" },
-  { id: "5", title: "2020 Ford Ranger", brand: "Ford", model: "Ranger", year: 2020, price: 35000, mileage: 60000, fuelType: "Diesel", transmission: "Manual", status: "sale" as const, image: "" },
-  { id: "6", title: "2023 Hyundai Tucson", brand: "Hyundai", model: "Tucson", year: 2023, price: 40000, mileage: 18000, fuelType: "Petrol", transmission: "Automatic", status: "sale" as const, image: "" },
-  { id: "7", title: "2022 Toyota Corolla (Rent)", brand: "Toyota", model: "Corolla", year: 2022, price: 500, mileage: 20000, fuelType: "Petrol", transmission: "Automatic", status: "rent" as const, image: "" },
-  { id: "8", title: "2021 Honda Civic (Rent)", brand: "Honda", model: "Civic", year: 2021, price: 450, mileage: 30000, fuelType: "Petrol", transmission: "CVT", status: "rent" as const, image: "" },
-  { id: "9", title: "2023 Kia Sportage (Rent)", brand: "Kia", model: "Sportage", year: 2023, price: 600, mileage: 10000, fuelType: "Hybrid", transmission: "Automatic", status: "rent" as const, image: "" },
-];
-
 const CARS_PER_PAGE = 10;
 
 type CarFilters = {
@@ -37,6 +25,10 @@ export default function CarsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [cars, setCars] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<CarFilters>({
     status: "all",
     brand: "all",
@@ -50,6 +42,41 @@ export default function CarsClient() {
     maxMileage: null,
     sort: "newest",
   });
+
+  // Fetch cars from API
+  const fetchCars = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("type", "car");
+      
+      if (filters.status !== "all") {
+        params.set("listingType", filters.status);
+      }
+      if (filters.minPrice !== null) {
+        params.set("minPrice", filters.minPrice.toString());
+      }
+      if (filters.maxPrice !== null) {
+        params.set("maxPrice", filters.maxPrice.toString());
+      }
+      if (filters.sort !== "newest") {
+        params.set("sort", filters.sort);
+      }
+      params.set("page", currentPage.toString());
+      
+      const response = await fetch(`/api/properties?${params.toString()}`);
+      const data = await response.json();
+      
+      setCars(data.properties || []);
+      setTotalCount(data.totalCount || 0);
+      setTotalPages(data.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching cars:", error);
+      setCars([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Initialize filters from URL params
   useEffect(() => {
@@ -83,6 +110,11 @@ export default function CarsClient() {
     setCurrentPage(1);
   }, [searchParams]);
 
+  // Fetch cars when filters or page change
+  useEffect(() => {
+    fetchCars();
+  }, [filters, currentPage]);
+
   const handleFilterChange = (newFilters: Partial<CarFilters>) => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
@@ -105,92 +137,116 @@ export default function CarsClient() {
     router.push(`/cars${params.toString() ? "?" + params.toString() : ""}`, { scroll: false });
   };
 
-  // Filter cars
-  const filteredCars = dummyCars.filter(car => {
-    if (filters.status !== "all" && car.status !== filters.status) return false;
-    if (filters.brand !== "all" && car.brand !== filters.brand) return false;
-    if (filters.minYear && car.year < filters.minYear) return false;
-    if (filters.maxYear && car.year > filters.maxYear) return false;
-    if (filters.fuelTypes.length > 0 && !filters.fuelTypes.includes(car.fuelType)) return false;
-    if (filters.transmissions.length > 0 && !filters.transmissions.includes(car.transmission)) return false;
-    if (filters.minPrice && car.price < filters.minPrice) return false;
-    if (filters.maxPrice && car.price > filters.maxPrice) return false;
-    if (filters.minMileage && car.mileage < filters.minMileage) return false;
-    if (filters.maxMileage && car.mileage > filters.maxMileage) return false;
-    return true;
-  });
-
-  // Sort cars
-  const sortedCars = [...filteredCars].sort((a, b) => {
-    switch (filters.sort) {
-      case "price-low":
-        return a.price - b.price;
-      case "price-high":
-        return b.price - a.price;
-      case "mileage-low":
-        return a.mileage - b.mileage;
-      case "mileage-high":
-        return b.mileage - a.mileage;
-      default:
-        return b.year - a.year;
-    }
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedCars.length / CARS_PER_PAGE);
-  const currentCars = sortedCars.slice(
-    (currentPage - 1) * CARS_PER_PAGE,
-    currentPage * CARS_PER_PAGE
-  );
+  // Format car data
+  const formatCar = (property: any) => {
+    const images = property.images ? JSON.parse(property.images) : [];
+    return {
+      id: property.id,
+      title: property.title,
+      brand: property.make || "Unknown",
+      model: property.model || "Unknown",
+      year: property.year || 2024,
+      price: property.price,
+      mileage: property.mileage || 0,
+      fuelType: property.fuelType || "Unknown",
+      transmission: property.transmission || "Unknown",
+      status: property.listingType,
+      image: images[0] || "",
+      currency: property.currency || "USD",
+    };
+  };
 
   return (
     <main className="py-12 bg-[#F5F5F5]">
       <div className="container mx-auto px-6">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar - we'll reuse the same component for now */}
+          {/* Sidebar */}
           <div className="lg:w-1/4">
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-semibold text-[#0B1F3A] mb-4">Cars Filters</h3>
-            </div>
+            <Sidebar 
+              filters={{ ...filters, type: "car" } as any} 
+              onFilterChange={handleFilterChange as any}
+              useFor="cars"
+            />
           </div>
 
           {/* Main Content */}
           <div className="lg:w-3/4">
             <h1 className="text-3xl md:text-4xl font-bold text-[#0B1F3A] mb-8">Cars</h1>
+            
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white p-4 rounded-xl shadow-sm">
+              <p className="text-[#6B7280]">{totalCount} results</p>
+            </div>
 
             {/* Cars Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {currentCars.map(car => (
-                <Link
-                  key={car.id}
-                  href={`/cars/${car.id}`}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col"
-                >
-                  <div className="w-full h-64 bg-[#0B1F3A] flex items-center justify-center flex-shrink-0 text-4xl text-[#C9A84C]">
-                    🚗
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col animate-pulse">
+                    <div className="w-full h-64 bg-[#0B1F3A]"></div>
+                    <div className="p-6 flex flex-col flex-1">
+                      <div className="h-4 w-1/2 bg-gray-200 rounded mb-3"></div>
+                      <div className="h-6 w-3/4 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-4 w-2/3 bg-gray-200 rounded mb-4"></div>
+                      <div className="mt-auto h-6 w-1/2 bg-gray-200 rounded"></div>
+                    </div>
                   </div>
-                  <div className="p-6 flex flex-col flex-1">
-                    <div className="flex gap-2 mb-3">
-                      <span className="badge-category">{car.brand}</span>
-                      <span className={car.status === 'rent' ? 'badge-rent' : 'badge-sale'}>
-                        {car.status === 'rent' ? 'For Rent' : 'For Sale'}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-[#0B1F3A] mb-2">{car.title}</h3>
-                    <p className="text-[#6B7280] mb-2">{car.year} • {car.transmission} • {car.fuelType}</p>
-                    <div className="flex gap-4 text-[#6B7280] mb-4">
-                      <span>📍 {car.mileage.toLocaleString()} km</span>
-                    </div>
-                    <div className="mt-auto flex justify-between items-center">
-                      <div className="text-2xl font-bold text-[#0B1F3A]">
-                        ${car.price.toLocaleString()}
-                        {car.status === 'rent' && <span className="text-lg font-normal">/month</span>}
+                ))}
+              </div>
+            ) : cars.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {cars.map(property => {
+                  const car = formatCar(property);
+                  return (
+                    <Link
+                      key={car.id}
+                      href={`/cars/${car.id}`}
+                      className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col"
+                    >
+                      <div className="w-full h-64 bg-[#0B1F3A] flex items-center justify-center flex-shrink-0 text-4xl text-[#C9A84C]">
+                        {car.image ? (
+                          <img
+                            src={car.image}
+                            alt={car.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = "";
+                              target.alt = "🚗";
+                            }}
+                          />
+                        ) : (
+                          "🚗"
+                        )}
                       </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                      <div className="p-6 flex flex-col flex-1">
+                        <div className="flex gap-2 mb-3">
+                          <span className="badge-category">{car.brand}</span>
+                          <span className={car.status === 'rent' ? 'badge-rent' : 'badge-sale'}>
+                            {car.status === 'rent' ? 'For Rent' : 'For Sale'}
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-semibold text-[#0B1F3A] mb-2">{car.title}</h3>
+                        <p className="text-[#6B7280] mb-2">{car.year} • {car.transmission} • {car.fuelType}</p>
+                        <div className="flex gap-4 text-[#6B7280] mb-4">
+                          <span>📍 {car.mileage.toLocaleString()} km</span>
+                        </div>
+                        <div className="mt-auto flex justify-between items-center">
+                          <div className="text-2xl font-bold text-[#0B1F3A]">
+                            {car.currency === 'USD' ? '$' : 'RWF '}{car.price.toLocaleString()}
+                            {car.status === 'rent' && <span className="text-lg font-normal">/month</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                <p className="text-[#6B7280] text-lg">No cars found matching your filters.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
