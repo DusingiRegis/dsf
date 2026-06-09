@@ -29,8 +29,8 @@ export async function GET() {
       prisma.pageVisit.count({ where: { createdAt: { gte: startOfToday } } }),
       prisma.pageVisit.groupBy({
         by: ["page"],
-        _count: { _all: true },
-        orderBy: { _count: { _all: "desc" } },
+        _count: { page: true },
+        orderBy: { _count: { page: "desc" } },
         take: 5,
       }),
       prisma.pageVisit.groupBy({
@@ -63,7 +63,7 @@ export async function GET() {
       todayVisits,
       visitsByPage: visitsByPage.map((v) => ({
         page: v.page,
-        count: v._count._all,
+        count: v._count.page,
       })),
       dailyVisits,
     });
