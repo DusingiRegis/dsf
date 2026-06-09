@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -12,7 +12,41 @@ export default function CarDetailClient() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+
+  const navigateImage = (direction: number) => {
+    if (!car) return;
+    setSelectedImage(prev => {
+      let next = prev + direction;
+      let images = [] as string[];
+      try { images = JSON.parse(car.images); } catch { images = []; }
+      if (next < 0) next = images.length - 1;
+      if (next >= images.length) next = 0;
+      return next;
+    });
+  };
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!isLightboxOpen) return;
+    if (e.key === 'Escape') setIsLightboxOpen(false);
+    if (e.key === 'ArrowLeft') navigateImage(-1);
+    if (e.key === 'ArrowRight') navigateImage(1);
+  }, [isLightboxOpen, car]);
+
+  useEffect(() => {
+    if (isLightboxOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isLightboxOpen, handleKeyDown]);
 
   // Fetch car data
   useEffect(() => {
@@ -34,17 +68,24 @@ export default function CarDetailClient() {
     fetchCar();
   }, [id]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Thank you! Your inquiry has been sent.');
-    setFormData({ name: '', email: '', phone: '', message: '' });
+    try {
+      await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          propertyId: id,
+        }),
+      });
+      alert('Thank you! Your inquiry has been sent.');
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch (error) {
+      console.error('Error sending inquiry:', error);
+      alert('Failed to send inquiry. Please try again.');
+    }
   };
-
-  const CarPlaceholder = () => (
-    <div className="w-full h-full bg-[#0B1F3A] flex items-center justify-center text-4xl text-[#C9A84C]">
-      🚗
-    </div>
-  );
 
   if (loading) {
     return (
@@ -52,7 +93,7 @@ export default function CarDetailClient() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row gap-8">
             <div className="lg:w-2/3">
-              <div className="h-96 bg-gray-200 rounded-xl mb-4 animate-pulse"></div>
+              <div className="h-[500px] bg-gray-200 rounded-xl mb-4 animate-pulse"></div>
               <div className="bg-white p-6 rounded-xl shadow-sm mb-6 animate-pulse">
                 <div className="h-4 w-1/2 bg-gray-200 rounded mb-3"></div>
                 <div className="h-8 w-3/4 bg-gray-200 rounded mb-4"></div>
@@ -137,6 +178,8 @@ export default function CarDetailClient() {
     addedDate: car.createdAt ? new Date(car.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "",
   };
 
+  const hasMultipleImages = formatCar.images.length > 1;
+
   return (
     <main className="py-12 bg-[#F5F5F5]">
       <div className="container mx-auto px-4">
@@ -145,7 +188,10 @@ export default function CarDetailClient() {
           <div className="lg:w-2/3">
             {/* Image Gallery */}
             <div className="mb-8">
-              <div className="h-96 bg-[#0B1F3A] rounded-xl mb-4 relative flex items-center justify-center overflow-hidden">
+              <div 
+                className="h-[500px] bg-[#0B1F3A] rounded-xl mb-4 relative flex items-center justify-center overflow-hidden cursor-pointer group"
+                onClick={() => hasMultipleImages && setIsLightboxOpen(true)}
+              >
                 {formatCar.images.length > 0 && !imageErrors[selectedImage] ? (
                   <Image
                     src={formatCar.images[selectedImage]}
@@ -156,16 +202,43 @@ export default function CarDetailClient() {
                     unoptimized={!formatCar.images[selectedImage].startsWith('/')}
                   />
                 ) : (
-                  <CarPlaceholder />
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-[#C9A84C] text-6xl mb-4">🚗</span>
+                    <span className="text-white text-lg">No images available</span>
+                  </div>
+                )}
+
+                {/* Navigation Arrows */}
+                {hasMultipleImages && formatCar.images.length > 0 && !imageErrors[selectedImage] && (
+                  <>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigateImage(-1); }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      ◀
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigateImage(1); }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      ▶
+                    </button>
+                    {/* Image Counter */}
+                    <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-lg">
+                      {selectedImage + 1} / {formatCar.images.length}
+                    </div>
+                  </>
                 )}
               </div>
+
+              {/* Thumbnails */}
               {formatCar.images.length > 0 && (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
                   {formatCar.images.map((img, idx) => (
                     <div
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
-                      className={`h-24 rounded-lg cursor-pointer overflow-hidden relative bg-[#0B1F3A] ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
+                      className={`h-20 rounded-lg cursor-pointer overflow-hidden relative bg-[#0B1F3A] ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : 'opacity-70 hover:opacity-100'}`}
                     >
                       {!imageErrors[idx] ? (
                         <Image
@@ -177,7 +250,7 @@ export default function CarDetailClient() {
                           unoptimized={!img.startsWith('/')}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl text-[#C9A84C]">
+                        <div className="w-full h-full flex items-center justify-center text-[#C9A84C] text-xl">
                           🚗
                         </div>
                       )}
@@ -189,7 +262,7 @@ export default function CarDetailClient() {
 
             {/* Title and Basic Info */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
-              <div className="flex gap-2 mb-3">
+              <div className="flex gap-2 mb-3 flex-wrap">
                 <span className="badge-category">{formatCar.brand}</span>
                 <span className={formatCar.status === 'rent' ? 'badge-rent' : 'badge-sale'}>
                   {formatCar.status === 'rent' ? 'For Rent' : 'For Sale'}
@@ -208,7 +281,7 @@ export default function CarDetailClient() {
             {/* Description */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <h2 className="text-xl font-semibold text-[#0B1F3A] mb-4">Description</h2>
-              <p className="text-[#6B7280]">{formatCar.description}</p>
+              <p className="text-[#6B7280] whitespace-pre-line">{formatCar.description}</p>
             </div>
 
             {/* Features */}
@@ -307,6 +380,52 @@ export default function CarDetailClient() {
           </div>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {isLightboxOpen && formatCar.images.length > 0 && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center"
+          onClick={(e) => e.target === e.currentTarget && setIsLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300"
+          >
+            ×
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); navigateImage(-1); }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-white/30"
+          >
+            ◀
+          </button>
+          <div className="relative w-[90vw] h-[80vh]">
+            {!imageErrors[selectedImage] ? (
+              <Image
+                src={formatCar.images[selectedImage]}
+                alt={formatCar.title}
+                fill
+                className="object-contain"
+                onError={() => setImageErrors(prev => ({ ...prev, [selectedImage]: true }))}
+                unoptimized={!formatCar.images[selectedImage].startsWith('/')}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-[#C9A84C] text-8xl">🚗</span>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); navigateImage(1); }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-white/30"
+          >
+            ▶
+          </button>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg">
+            {selectedImage + 1} / {formatCar.images.length}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
