@@ -119,3 +119,15 @@ model NewsletterSubscriber {
   email            String   @unique
   subscribedAt     DateTime @default(now())
 }
+
+// ─────────────────────────────────────────
+// PAGE VISITS TABLE (Analytics)
+// ─────────────────────────────────────────
+model PageVisit {
+  id        String   @id @default(cuid())
+  page      String
+  referrer  String?
+  userAgent String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+}
