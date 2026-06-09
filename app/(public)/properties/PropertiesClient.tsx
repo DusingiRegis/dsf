@@ -11,8 +11,9 @@ import CallWidget from '@/components/public/CallWidget';
 interface Property {
   id: string;
   title: string;
-  type: 'house' | 'apartment' | 'plot' | 'commercial';
+  type: 'house' | 'apartment' | 'plot' | 'commercial' | 'car';
   status: string;
+  listingType: string;
   category: string;
   price: number;
   currency?: string;
@@ -27,6 +28,7 @@ interface Property {
   features?: string[];
   images?: string;
   createdAt?: string;
+  furnished?: boolean | null;
 }
 
 const PROPERTIES_PER_PAGE = 10;
@@ -34,7 +36,7 @@ const PROPERTIES_PER_PAGE = 10;
 interface Filters {
   listingType: 'all' | 'rent' | 'sale';
   status: 'all' | 'rent' | 'sale' | 'available' | 'sold' | 'pending';
-  type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished';
+  type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished' | 'car';
   location: string;
   minPrice: number | null;
   maxPrice: number | null;
@@ -49,6 +51,8 @@ export default function PropertiesClient() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
     listingType: 'all',
@@ -68,24 +72,25 @@ export default function PropertiesClient() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filters.type !== 'all' && filters.type !== 'furnished' && filters.type !== 'unfurnished') {
-        params.set('type', filters.type);
-      }
-      if (filters.status !== 'all') {
-        params.set('status', filters.status);
-      }
-      if (filters.location) {
-        params.set('location', filters.location);
-      }
-      if (filters.listingType !== 'all') {
-        params.set('listingType', filters.listingType);
-      }
       
+      // Set all filter parameters
+      if (filters.listingType !== 'all') params.set('listingType', filters.listingType);
+      if (filters.status !== 'all') params.set('status', filters.status);
+      if (filters.type !== 'all') params.set('type', filters.type);
+      if (filters.location) params.set('location', filters.location);
+      if (filters.minPrice !== null) params.set('minPrice', filters.minPrice.toString());
+      if (filters.maxPrice !== null) params.set('maxPrice', filters.maxPrice.toString());
+      if (filters.bedrooms !== null) params.set('bedrooms', filters.bedrooms.toString());
+      if (filters.bathrooms !== null) params.set('bathrooms', filters.bathrooms.toString());
+      if (filters.features.length > 0) params.set('features', filters.features.join(','));
+      if (filters.sort !== 'newest') params.set('sort', filters.sort);
+      params.set('page', currentPage.toString());
+
       const response = await fetch(`/api/properties?${params.toString()}`);
       const data = await response.json();
       
       // Convert API data to our component format
-      const formattedProperties = data.map((prop: any) => {
+      const formattedProperties = data.properties.map((prop: any) => {
         // Parse images from JSON string
         let image = '';
         if (prop.images) {
@@ -106,9 +111,13 @@ export default function PropertiesClient() {
           if (prop.type === 'apartment') category = 'Sales Apartments';
           if (prop.type === 'plot') category = 'Land/Plot Sales';
           if (prop.type === 'commercial') category = 'Commercial Sales';
+          if (prop.type === 'car') category = 'Vehicles';
         } else if (prop.listingType === 'rent') {
           if (prop.type === 'house') category = 'Houses for Rent';
-          if (prop.type === 'apartment') category = 'Apartments for Rent';
+          if (prop.type === 'apartment') {
+            if (prop.furnished) category = 'Furnished Apartments';
+            else category = 'Apartments for Rent';
+          }
           if (prop.type === 'commercial') category = 'Commercial Rentals';
         }
         
@@ -129,14 +138,19 @@ export default function PropertiesClient() {
           agent: 'D.E.F Real Estate Team',
           featured: prop.featured || false,
           addedDate: prop.createdAt ? new Date(prop.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '',
-          images: prop.images
+          images: prop.images,
+          furnished: prop.furnished
         };
       });
       
       setProperties(formattedProperties);
+      setTotalCount(data.totalCount || 0);
+      setTotalPages(data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching properties:', error);
       setProperties([]);
+      setTotalCount(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -151,7 +165,7 @@ export default function PropertiesClient() {
     const newFilters: Filters = {
       listingType: (listingTypeParam as 'rent' | 'sale') || 'all',
       status: (statusParam as 'available' | 'sold' | 'pending') || 'all',
-      type: (typeParam as 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished') || 'all',
+      type: (typeParam as 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished' | 'car') || 'all',
       location: searchParams.get('location') || '',
       minPrice: searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : null,
       maxPrice: searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : null,
@@ -164,48 +178,10 @@ export default function PropertiesClient() {
     setCurrentPage(1);
   }, [searchParams]);
 
-  // Fetch properties when filters change
+  // Fetch properties when filters or page change
   useEffect(() => {
     fetchProperties();
-  }, [filters]);
-
-  // Filter properties
-  const filteredProperties = properties.filter(property => {
-    if (filters.listingType !== 'all' && (property as any).listingType !== filters.listingType) return false;
-    if (filters.status !== 'all' && property.status !== filters.status) return false;
-    
-    if (filters.type !== 'all') {
-      if (filters.type === 'furnished') {
-        if (!property.category.includes('Furnished')) return false;
-      } else if (filters.type === 'unfurnished') {
-        if (!property.category.includes('Unfurnished')) return false;
-      } else if (property.type !== filters.type) {
-        return false;
-      }
-    }
-    
-    if (filters.location && !property.location.toLowerCase().includes(filters.location.toLowerCase())) return false;
-    if (filters.minPrice !== null && property.price < filters.minPrice) return false;
-    if (filters.maxPrice !== null && property.price > filters.maxPrice) return false;
-    if (filters.bedrooms !== null && (property.bedrooms || 0) < filters.bedrooms) return false;
-    if (filters.bathrooms !== null && (property.bathrooms || 0) < filters.bathrooms) return false;
-    return true;
-  });
-
-  // Sort properties
-  const sortedProperties = [...filteredProperties].sort((a, b) => {
-    if (filters.sort === 'price-low') return a.price - b.price;
-    if (filters.sort === 'price-high') return b.price - a.price;
-    // Default: newest
-    return new Date(b.addedDate).getTime() - new Date(a.addedDate).getTime();
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedProperties.length / PROPERTIES_PER_PAGE);
-  const currentProperties = sortedProperties.slice(
-    (currentPage - 1) * PROPERTIES_PER_PAGE,
-    currentPage * PROPERTIES_PER_PAGE
-  );
+  }, [filters, currentPage]);
 
   const handleFilterChange = (newFilters: Partial<Filters>) => {
     const updatedFilters = { ...filters, ...newFilters };
@@ -244,6 +220,7 @@ export default function PropertiesClient() {
     if (filters.type === "commercial" && filters.status === "available") return `Commercial Available for ${typeText}`;
     if (filters.type === "house" && filters.status === "available") return `Houses for ${typeText}`;
     if (filters.type === "plot" && filters.status === "available") return `Plots / Land for ${typeText}`;
+    if (filters.type === "car" && filters.status === "available") return `Vehicles for ${typeText}`;
     if (filters.status === "sold") return "Sold Out Properties";
     if (filters.status === "pending") return "In Talks Properties";
     if (filters.status === "available") return `Available Properties for ${typeText}`;
@@ -284,7 +261,7 @@ export default function PropertiesClient() {
           <div className="lg:w-3/4">
             {/* Sorting */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white p-4 rounded-xl shadow-sm">
-              <p className="text-[#6B7280]">{sortedProperties.length} results</p>
+              <p className="text-[#6B7280]">{totalCount} results</p>
               <select 
                 className="w-full md:w-auto px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent"
                 value={
@@ -326,8 +303,8 @@ export default function PropertiesClient() {
                     </div>
                   ))}
                 </div>
-              ) : currentProperties.length > 0 ? (
-                currentProperties.map(property => (
+              ) : properties.length > 0 ? (
+                properties.map(property => (
                   <PropertyCard key={property.id} property={property as any} />
                 ))
               ) : (

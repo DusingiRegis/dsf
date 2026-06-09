@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface Filters {
   status: 'all' | 'rent' | 'sale' | 'available' | 'sold' | 'pending';
-  type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished';
+  type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished' | 'car';
   location: string;
   minPrice: number | null;
   maxPrice: number | null;
@@ -41,13 +41,14 @@ export default function Sidebar({ filters, onFilterChange, useFor = 'properties'
   };
 
   const handleTypeChange = (value: string) => {
-    let type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished' = 'all';
+    let type: 'all' | 'house' | 'apartment' | 'plot' | 'commercial' | 'furnished' | 'unfurnished' | 'car' = 'all';
     if (value === 'House') type = 'house';
     if (value === 'Apartment') type = 'apartment';
     if (value === 'Plot') type = 'plot';
     if (value === 'Commercial') type = 'commercial';
     if (value === 'Furnished') type = 'furnished';
     if (value === 'Unfurnished') type = 'unfurnished';
+    if (value === 'Car') type = 'car';
     setTempFilters({ ...tempFilters, type });
   };
 
@@ -101,6 +102,7 @@ export default function Sidebar({ filters, onFilterChange, useFor = 'properties'
     if (tempFilters.type === 'commercial') return 'Commercial';
     if (tempFilters.type === 'furnished') return 'Furnished';
     if (tempFilters.type === 'unfurnished') return 'Unfurnished';
+    if (tempFilters.type === 'car') return 'Car';
     return 'All Types';
   };
 
@@ -154,6 +156,7 @@ export default function Sidebar({ filters, onFilterChange, useFor = 'properties'
               <option>Apartment</option>
               <option>Plot</option>
               <option>Commercial</option>
+              <option>Car</option>
             </select>
           </div>
 
