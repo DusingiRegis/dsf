@@ -712,6 +712,7 @@ export default function AddPropertyPage() {
 
         </form>
       </div>
+      </div>
     </>
   );
 }
