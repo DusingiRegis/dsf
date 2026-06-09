@@ -1,14 +1,14 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PropertyCard from '@/components/public/PropertyCard';
 import Image from 'next/image';
 
 interface Property {
   id: string;
   title: string;
-  type: 'house' | 'apartment' | 'plot' | 'commercial';
+  type: 'house' | 'apartment' | 'plot' | 'commercial' | 'car';
   status: 'available' | 'pending' | 'sold';
   listingType: 'rent' | 'sale';
   category: string;
@@ -36,20 +36,8 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
-
-  const isSafeImage = (src: string) => {
-    try {
-      if (!src) return false;
-      // Allow relative paths (starting with /)
-      if (src.startsWith('/')) return true;
-      // Check full URLs
-      const url = new URL(src);
-      return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  };
 
   const parseImages = (imagesStr: string) => {
     try {
@@ -62,6 +50,48 @@ export default function PropertyDetailPage() {
     }
     return [];
   };
+
+  const getPropertyEmoji = (type: string) => {
+    switch (type) {
+      case 'house': return '🏠';
+      case 'apartment': return '🏢';
+      case 'plot': return '🌳';
+      case 'commercial': return '🏪';
+      case 'car': return '🚗';
+      default: return '🏠';
+    }
+  };
+
+  const navigateImage = (direction: number) => {
+    if (!property) return;
+    setSelectedImage(prev => {
+      let next = prev + direction;
+      if (next < 0) next = property.images.length - 1;
+      if (next >= property.images.length) next = 0;
+      return next;
+    });
+  };
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!isLightboxOpen) return;
+    if (e.key === 'Escape') setIsLightboxOpen(false);
+    if (e.key === 'ArrowLeft') navigateImage(-1);
+    if (e.key === 'ArrowRight') navigateImage(1);
+  }, [isLightboxOpen, property]);
+
+  useEffect(() => {
+    if (isLightboxOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isLightboxOpen, handleKeyDown]);
 
   // Fetch property details
   const fetchProperty = async () => {
@@ -80,6 +110,18 @@ export default function PropertyDetailPage() {
       // Parse images
       let images: string[] = parseImages(data.images);
 
+      // Parse features
+      let features: string[] = [];
+      try {
+        if (typeof data.features === 'string') {
+          features = JSON.parse(data.features);
+        } else if (Array.isArray(data.features)) {
+          features = data.features;
+        }
+      } catch {
+        features = [];
+      }
+
       // Determine category
       let category = 'Property';
       const listingType = data.listingType || 'sale';
@@ -88,6 +130,7 @@ export default function PropertyDetailPage() {
         if (data.type === 'apartment') category = 'Sales Apartments';
         if (data.type === 'plot') category = 'Land/Plot Sales';
         if (data.type === 'commercial') category = 'Commercial Sales';
+        if (data.type === 'car') category = 'Vehicles';
       } else {
         if (data.type === 'house') category = 'Houses for Rent';
         if (data.type === 'apartment') category = 'Apartments for Rent';
@@ -109,7 +152,7 @@ export default function PropertyDetailPage() {
         size: data.size,
         images,
         description: data.description || "No description available.",
-        features: [],
+        features,
         agent: {
           name: "D.E.F Real Estate Team",
           phone: "+250 788 909 960",
@@ -144,6 +187,7 @@ export default function PropertyDetailPage() {
             if (p.type === 'apartment') simCategory = 'Sales Apartments';
             if (p.type === 'plot') simCategory = 'Land/Plot Sales';
             if (p.type === 'commercial') simCategory = 'Commercial Sales';
+            if (p.type === 'car') simCategory = 'Vehicles';
           } else {
             if (p.type === 'house') simCategory = 'Houses for Rent';
             if (p.type === 'apartment') simCategory = 'Apartments for Rent';
@@ -204,7 +248,7 @@ export default function PropertyDetailPage() {
       <main className="py-12 bg-[#F5F5F5]">
         <div className="container mx-auto px-4">
           <div className="animate-pulse">
-            <div className="h-96 bg-gray-200 rounded-xl mb-8" />
+            <div className="h-[500px] bg-gray-200 rounded-xl mb-8" />
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <div className="h-8 w-3/4 bg-gray-200 rounded mb-4" />
               <div className="h-4 w-1/2 bg-gray-200 rounded mb-4" />
@@ -231,7 +275,7 @@ export default function PropertyDetailPage() {
     );
   }
 
-  const safeImages = property.images.filter(img => isSafeImage(img));
+  const hasMultipleImages = property.images.length > 1;
 
   return (
     <main className="py-12 bg-[#F5F5F5]">
@@ -241,27 +285,58 @@ export default function PropertyDetailPage() {
           <div className="lg:w-2/3">
             {/* Image Gallery */}
             <div className="mb-8">
-              <div className="h-96 bg-[#0B1F3A] rounded-xl mb-4 relative flex items-center justify-center overflow-hidden">
-                {safeImages.length > 0 && !imageErrors[selectedImage] ? (
+              {/* Main Image */}
+              <div 
+                className="h-[500px] bg-[#0B1F3A] rounded-xl mb-4 relative flex items-center justify-center overflow-hidden cursor-pointer group"
+                onClick={() => hasMultipleImages && setIsLightboxOpen(true)}
+              >
+                {property.images.length > 0 && !imageErrors[selectedImage] ? (
                   <Image
-                    src={safeImages[selectedImage]}
+                    src={property.images[selectedImage]}
                     alt={property.title}
                     fill
                     className="object-cover"
                     onError={() => setImageErrors(prev => ({ ...prev, [selectedImage]: true }))}
-                    unoptimized={!safeImages[selectedImage].startsWith('/')}
+                    unoptimized={!property.images[selectedImage].startsWith('/')}
                   />
                 ) : (
-                  <span className="text-[#C9A84C] text-4xl z-10">🏠</span>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-[#C9A84C] text-6xl mb-4">{getPropertyEmoji(property.type)}</span>
+                    <span className="text-white text-lg">No images available</span>
+                  </div>
+                )}
+
+                {/* Navigation Arrows */}
+                {hasMultipleImages && property.images.length > 0 && !imageErrors[selectedImage] && (
+                  <>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigateImage(-1); }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      ◀
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigateImage(1); }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      ▶
+                    </button>
+                    {/* Image Counter */}
+                    <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-lg">
+                      {selectedImage + 1} / {property.images.length}
+                    </div>
+                  </>
                 )}
               </div>
-              {safeImages.length > 0 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {safeImages.map((img, idx) => (
+
+              {/* Thumbnails */}
+              {property.images.length > 0 && (
+                <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                  {property.images.map((img, idx) => (
                     <div
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
-                      className={`h-24 rounded-lg cursor-pointer overflow-hidden relative bg-[#0B1F3A] ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : ''}`}
+                      className={`h-20 rounded-lg cursor-pointer overflow-hidden relative bg-[#0B1F3A] ${selectedImage === idx ? 'ring-2 ring-[#C9A84C]' : 'opacity-70 hover:opacity-100'}`}
                     >
                       {!imageErrors[idx] ? (
                         <Image
@@ -273,7 +348,9 @@ export default function PropertyDetailPage() {
                           unoptimized={!img.startsWith('/')}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[#C9A84C] text-2xl">🏠</div>
+                        <div className="w-full h-full flex items-center justify-center text-[#C9A84C] text-xl">
+                          {getPropertyEmoji(property.type)}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -283,25 +360,34 @@ export default function PropertyDetailPage() {
 
             {/* Title and Basic Info */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
-              <div className="flex gap-2 mb-3">
+              <div className="flex gap-2 mb-3 flex-wrap">
                 <span className="badge-category">{property.category}</span>
                 <span className={property.listingType === 'rent' ? 'badge-rent' : 'badge-sale'}>
                   {property.listingType === 'rent' ? 'For Rent' : 'For Sale'}
                 </span>
+                {property.status === 'sold' && <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">Sold</span>}
+                {property.status === 'pending' && <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold">In Talks</span>}
               </div>
               <h1 className="text-3xl font-bold text-[#0B1F3A] mb-2">{property.title}</h1>
               <p className="text-[#6B7280] flex items-center gap-2 mb-4">📍 {property.location}</p>
-              <div className="flex gap-6 text-[#6B7280]">
-                {property.bedrooms && <span>🛏️ {property.bedrooms} Beds</span>}
-                {property.bathrooms && <span>🚿 {property.bathrooms} Baths</span>}
-                {property.size && <span>📐 {property.size} sqm</span>}
-              </div>
+              {property.type !== 'plot' && property.type !== 'car' && (
+                <div className="flex gap-6 text-[#6B7280]">
+                  {property.bedrooms && <span>🛏️ {property.bedrooms} Beds</span>}
+                  {property.bathrooms && <span>🚿 {property.bathrooms} Baths</span>}
+                  {property.size && <span>📐 {property.size} sqm</span>}
+                </div>
+              )}
+              {property.type === 'car' && (
+                <div className="flex gap-6 text-[#6B7280]">
+                  {/* We don't have car fields but let's add placeholders if needed */}
+                </div>
+              )}
             </div>
 
             {/* Description */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <h2 className="text-xl font-semibold text-[#0B1F3A] mb-4">Description</h2>
-              <p className="text-[#6B7280]">{property.description}</p>
+              <p className="text-[#6B7280] whitespace-pre-line">{property.description}</p>
             </div>
 
             {/* Features */}
@@ -421,6 +507,52 @@ export default function PropertyDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Lightbox */}
+      {isLightboxOpen && property.images.length > 0 && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center"
+          onClick={(e) => e.target === e.currentTarget && setIsLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300"
+          >
+            ×
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); navigateImage(-1); }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-white/30"
+          >
+            ◀
+          </button>
+          <div className="relative w-[90vw] h-[80vh]">
+            {!imageErrors[selectedImage] ? (
+              <Image
+                src={property.images[selectedImage]}
+                alt={property.title}
+                fill
+                className="object-contain"
+                onError={() => setImageErrors(prev => ({ ...prev, [selectedImage]: true }))}
+                unoptimized={!property.images[selectedImage].startsWith('/')}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-[#C9A84C] text-8xl">{getPropertyEmoji(property.type)}</span>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); navigateImage(1); }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-white/30"
+          >
+            ▶
+          </button>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg">
+            {selectedImage + 1} / {property.images.length}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
