@@ -21,9 +21,10 @@ export default function ClientProperties() {
     try {
       const res = await fetch('/api/properties');
       const data = await res.json();
-      setProperties(data.properties || data);
+      setProperties(data.properties || data || []);
     } catch (error) {
       console.error('Error fetching properties:', error);
+      setProperties([]);
     } finally {
       setLoading(false);
     }

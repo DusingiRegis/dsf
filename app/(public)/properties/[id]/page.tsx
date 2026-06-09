@@ -197,32 +197,36 @@ export default function PropertyDetailPage() {
         .map((p: any) => {
           let simImage = "";
           if (p.images) {
-            try {
-              const simImages = JSON.parse(p.images);
-              if (simImages.length > 0) simImage = simImages[0];
-            } catch (e) {
-              simImage = p.images;
+            if (Array.isArray(p.images)) {
+              if (p.images.length > 0) simImage = p.images[0];
+            } else if (typeof p.images === 'string') {
+              try {
+                const simImagesArray = JSON.parse(p.images);
+                if (Array.isArray(simImagesArray) && simImagesArray.length > 0) simImage = simImagesArray[0];
+              } catch (e) {
+                simImage = p.images;
+              }
             }
           }
           // Determine category for similar property
-          let simCategory = 'Property';
-          const simListingType = p.listingType || 'sale';
-          if (simListingType === 'sale') {
-            if (p.type === 'house') simCategory = 'Houses for Sale';
-            if (p.type === 'apartment') simCategory = 'Sales Apartments';
-            if (p.type === 'plot') simCategory = 'Land/Plot Sales';
-            if (p.type === 'commercial') simCategory = 'Commercial Sales';
-            if (p.type === 'car') simCategory = 'Vehicles';
-          } else {
-            if (p.type === 'house') simCategory = 'Houses for Rent';
-            if (p.type === 'apartment') simCategory = 'Apartments for Rent';
-            if (p.type === 'commercial') simCategory = 'Commercial Rentals';
+          let simCategory = "Property";
+          const simListingType = p.listingType || "sale";
+          if (simListingType === "sale") {
+            if (p.type === "house") simCategory = "Houses for Sale";
+            if (p.type === "apartment") simCategory = "Sales Apartments";
+            if (p.type === "plot") simCategory = "Land/Plot Sales";
+            if (p.type === "commercial") simCategory = "Commercial Sales";
+            if (p.type === "car") simCategory = "Vehicles";
+          } else if (simListingType === "rent") {
+            if (p.type === "house") simCategory = "Houses for Rent";
+            if (p.type === "apartment") simCategory = "Apartments for Rent";
+            if (p.type === "commercial") simCategory = "Commercial Rentals";
           }
           return {
             id: p.id,
             title: p.title,
             type: p.type,
-            status: p.status || 'available',
+            status: p.status || "available",
             listingType: simListingType,
             category: simCategory,
             price: p.price,

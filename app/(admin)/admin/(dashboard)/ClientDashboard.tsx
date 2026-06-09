@@ -15,10 +15,12 @@ export default function ClientDashboard() {
       ]);
       const propsData = await propsRes.json();
       const inqData = await inqRes.json();
-      setProperties(propsData);
-      setInquiries(inqData);
+      setProperties(propsData.properties || propsData || []);
+      setInquiries(inqData.inquiries || inqData || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setProperties([]);
+      setInquiries([]);
     } finally {
       setLoading(false);
     }

@@ -31,9 +31,10 @@ export default function ClientPropertySubmissions() {
     try {
       const res = await fetch('/api/property-submissions');
       const data = await res.json();
-      setSubmissions(data);
+      setSubmissions(Array.isArray(data) ? data : data.submissions || []);
     } catch (error) {
       console.error('Error fetching submissions:', error);
+      setSubmissions([]);
     } finally {
       setLoading(false);
     }

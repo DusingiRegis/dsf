@@ -26,9 +26,10 @@ export default function ClientInquiries() {
     try {
       const res = await fetch('/api/inquiries');
       const data = await res.json();
-      setInquiries(data);
+      setInquiries(Array.isArray(data) ? data : data.inquiries || []);
     } catch (error) {
       console.error('Error fetching inquiries:', error);
+      setInquiries([]);
     } finally {
       setLoading(false);
     }
