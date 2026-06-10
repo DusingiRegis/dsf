@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import ImageReorderGrid from '@/components/admin/ImageReorderGrid';
 
 // Define categories with their configurations
 const CATEGORIES = {
@@ -577,28 +578,11 @@ export default function AddPropertyPage() {
                 </div>
 
                 {imageUrls.length > 0 && (
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    {imageUrls.map((url, idx) => (
-                      <div key={idx} className="relative">
-                        <img src={url} alt={`Property ${idx + 1}`} className="w-full h-24 object-cover rounded-xl border border-slate-200" onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null;
-                          target.src = 'data:image/svg+xml,' + encodeURIComponent(`
-                            <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
-                              <rect width="200" height="200" fill="#f3f4f6"/>
-                              <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#6b7280">Photo</text>
-                            </svg>
-                          `);
-                        }} />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(idx)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                  <div className="mt-4">
+                    <ImageReorderGrid images={imageUrls} onImagesChange={(newImages) => {
+                      setImageUrls(newImages);
+                      setFormData(prev => ({ ...prev, images: JSON.stringify(newImages) }));
+                    }} />
                   </div>
                 )}
               </div>
