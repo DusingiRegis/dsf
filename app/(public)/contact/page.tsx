@@ -1,7 +1,5 @@
 'use client';
 
-export const revalidate = 60;
-
 import { useState } from 'react';
 
 export default function ContactPage() {
