@@ -1,3 +1,5 @@
+export const revalidate = 60;
+
 export default function AboutPage() {
   return (
     <main className="bg-[#F5F5F5] py-12">

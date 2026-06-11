@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 export async function GET(req: Request) {
   try {
@@ -124,6 +125,10 @@ export async function GET(req: Request) {
       totalCount,
       page,
       totalPages: Math.ceil(totalCount / limit),
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
     });
   } catch (error) {
     console.error('Error fetching properties:', error);
@@ -201,6 +206,11 @@ export async function POST(req: Request) {
         features: body.features || null,
       },
     });
+
+    // Revalidate cache
+    revalidatePath('/');
+    revalidatePath('/properties');
+    revalidatePath('/cars');
 
     return NextResponse.json(newProperty, { status: 201 });
   } catch (error: any) {

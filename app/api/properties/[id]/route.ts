@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { revalidatePath } from 'next/cache';
 
 export async function GET(
   req: Request,
@@ -115,6 +116,12 @@ export async function PUT(
       where: { id: params.id },
       data,
     });
+
+    // Revalidate cache
+    revalidatePath('/');
+    revalidatePath('/properties');
+    revalidatePath('/cars');
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating property:", error);
@@ -133,6 +140,12 @@ export async function DELETE(
     await prisma.property.delete({
       where: { id: params.id },
     });
+
+    // Revalidate cache
+    revalidatePath('/');
+    revalidatePath('/properties');
+    revalidatePath('/cars');
+
     return NextResponse.json({ message: "Property deleted" });
   } catch (error) {
     console.error("Error deleting property:", error);
